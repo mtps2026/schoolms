@@ -26,6 +26,14 @@ export async function generateReportCardPdf(reportCard: ReportCard): Promise<voi
     doc.setFillColor(6, 182, 212); // cyan-500
     doc.rect(0, 32, pageW, 2, 'F');
 
+    // Add logo image before school name
+    try {
+        const logoImg = '/image.png';
+        doc.addImage(logoImg, 'PNG', 16, 4, 12, 12);
+    } catch (e) {
+        // Logo loading failed, continue without it
+    }
+
     // School Name
     doc.setTextColor(255, 255, 255);
     doc.setFontSize(20);
@@ -227,6 +235,13 @@ export async function generateReportCardPdf(reportCard: ReportCard): Promise<voi
     // ── Footer Band ────────────────────────────────────────────────────────
     doc.setFillColor(67, 56, 202);
     doc.rect(0, pageH - 3, pageW, 3, 'F');
+
+    // Add watermark
+    doc.setTextColor(200, 200, 200);
+    doc.setFontSize(60);
+    doc.setFont('helvetica', 'bold');
+    doc.text('MTPS', pageW / 2, pageH / 2, { align: 'center', angle: -45 });
+    doc.setTextColor(0, 0, 0);
 
     // Save
     const fileName = `Report_Card_${student?.full_name?.replace(/\s+/g, '_') || 'Student'}_${reportCard.academic_year}_${reportCard.term.replace(/\s+/g, '_')}.pdf`;

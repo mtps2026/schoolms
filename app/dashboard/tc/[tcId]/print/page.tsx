@@ -87,8 +87,14 @@ export default function TCPrintPage() {
                     line-height: 1.45;
                 }
                 .header-row { display: flex; justify-content: space-between; align-items: flex-start; gap: 10px; margin-bottom: 4px; font-size: 10px; }
-                .school-title { text-align: center; margin: 10px 0 6px; }
+                .school-title { text-align: center; margin: 10px 0 6px; position: relative; }
+                .school-logo-title { display: flex; align-items: center; justify-content: center; gap: 8px; }
+                .school-logo-title img { height: 32px; object-fit: contain; }
                 .school-title h1 { font-size: 22px; font-weight: 900; text-transform: uppercase; letter-spacing: 0.5px; border-top: 1px solid #333; border-bottom: 1px solid #333; padding: 3px 0; }
+                .watermark { position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%) rotate(-45deg); font-size: 120px; opacity: 0.08; z-index: -1; white-space: nowrap; pointer-events: none; }
+                @media print {
+                    .watermark { display: block; }
+                }
                 .form-title { font-size: 13px; font-weight: 700; }
                 .hindi-title { font-size: 10px; margin-top: 2px; }
                 table.main-grid { width: 100%; border-collapse: collapse; margin-top: 8px; }
@@ -105,7 +111,21 @@ export default function TCPrintPage() {
 
             <button className="print-btn no-print" onClick={() => window.print()}>🖨 Print</button>
 
+            <div className="watermark">
+                <img src="/image.png" alt="MTPS" style={{ height: '300px', opacity: 0.1 }} />
+            </div>
+
             <div className="tc-page">
+                {/* School Header with Logo */}
+                <div className="school-logo-title" style={{ marginBottom: '10px', justifyContent: 'center' }}>
+                    <img src="/image.png" alt="MTPS Logo" style={{ height: '40px', objectFit: 'contain' }} />
+                    <div>
+                        <div style={{ textAlign: 'center', fontSize: '18px', fontWeight: '900', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+                            {schoolName}
+                        </div>
+                    </div>
+                </div>
+
                 {/* Top row: file numbers */}
                 <div className="header-row">
                     <div>

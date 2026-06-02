@@ -2,6 +2,8 @@
 
 import { useState, useEffect } from "react";
 import { supabase } from "@/lib/supabase";
+import { uppercaseTextFields } from "@/lib/utils";
+import { getMinDate, getMaxDate } from "@/lib/utils/validation";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -9,6 +11,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Loader2, Edit } from "lucide-react";
 import { toast } from "sonner";
+import FormWatermark from "@/components/common/FormWatermark";
 
 interface EditProfileDialogProps {
     profile: any;
@@ -39,7 +42,9 @@ export default function EditProfileDialog({ profile, onSuccess, trigger, isTeach
         current_address: "",
         subject_specialization: "",
         // Extended student fields
+        dob: "",
         form_submitted_date: "",
+        admission_number: "",
         aadhar_number: "",
         mother_name: "",
         father_name: "",
@@ -49,6 +54,7 @@ export default function EditProfileDialog({ profile, onSuccess, trigger, isTeach
     });
 
     useEffect(() => {
+        console.log("Profile Data:", profile);
         if (open) {
             setFormData({
                 full_name: profile?.full_name || "",
@@ -56,7 +62,9 @@ export default function EditProfileDialog({ profile, onSuccess, trigger, isTeach
                 phone: profile?.phone || "",
                 current_address: profile?.current_address || "",
                 subject_specialization: defaultSubject || "",
+                dob: profile?.dob || "",
                 form_submitted_date: profile?.form_submitted_date || "",
+                admission_number: profile?.admission_no || "",
                 aadhar_number: profile?.aadhar_number || "",
                 mother_name: profile?.mother_name || "",
                 father_name: profile?.father_name || "",
@@ -106,7 +114,9 @@ export default function EditProfileDialog({ profile, onSuccess, trigger, isTeach
             // Merge student-specific fields
             if (isStudent) {
                 Object.assign(baseUpdate, {
+                    dob: formData.dob || null,
                     form_submitted_date: formData.form_submitted_date || null,
+                    admission_no: formData.admission_number || null,
                     aadhar_number: formData.aadhar_number || null,
                     mother_name: formData.mother_name || null,
                     father_name: formData.father_name || null,
@@ -116,17 +126,20 @@ export default function EditProfileDialog({ profile, onSuccess, trigger, isTeach
                 });
             }
 
+            const normalizedUpdate = uppercaseTextFields(baseUpdate);
+
             const { error } = await supabase
                 .from(table)
-                .update(baseUpdate)
+                .update(normalizedUpdate)
                 .eq("id", profile.id);
 
             if (error) throw error;
 
             if (isTeacher) {
+                const teacherPayload = uppercaseTextFields({ id: profile.id, subject_specialization: formData.subject_specialization });
                 const { error: teacherError } = await supabase
                     .from("teachers_data")
-                    .upsert({ id: profile.id, subject_specialization: formData.subject_specialization });
+                    .upsert(teacherPayload);
                 if (teacherError) throw teacherError;
             }
 
@@ -145,11 +158,17 @@ export default function EditProfileDialog({ profile, onSuccess, trigger, isTeach
             <DialogTrigger asChild>
                 {trigger || <Button variant="outline"><Edit className="mr-2 h-4 w-4" /> Edit Profile</Button>}
             </DialogTrigger>
-            <DialogContent className="bg-gradient-to-br from-white to-indigo-50/30 max-w-4xl max-h-[90vh] overflow-y-auto">
-                <DialogHeader>
+           <DialogContent
+  className="max-w-4xl max-h-[90vh] overflow-y-auto"
+>
+    <FormWatermark />
+    <DialogHeader>
                     <DialogTitle className="gradient-text-primary">Edit Profile</DialogTitle>
                 </DialogHeader>
-                <form onSubmit={handleSubmit} className="space-y-6 py-4">
+                <form
+    onSubmit={handleSubmit}
+    className="space-y-6 py-4 relative z-10"
+>
                     {/* Top row: core fields in a 3-col grid */}
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                         <div className="space-y-2">
@@ -193,9 +212,36 @@ export default function EditProfileDialog({ profile, onSuccess, trigger, isTeach
                                 <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-4">Additional Details</p>
                                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                                     <div className="space-y-2">
-                                        <Label>Date of Submitted Form <span className="text-slate-400 text-xs font-normal">(Optional)</span></Label>
-                                        <Input type="date" value={formData.form_submitted_date} onChange={set("form_submitted_date")} />
-                                    </div>
+                                    <Label>Date of Birth</Label>
+                                    <Input
+                                        type="date"
+                                        value={formData.dob}
+                                        onChange={set("dob")}
+                                        min={(() => {
+                                            const className = profile?.classes?.class_name || "";
+                                            const isNursery = /nur/i.test(className);
+                                            return getMinDate(isNursery ? 4 : 120);
+                                        })()}
+                                        max={(() => {
+                                            const className = profile?.classes?.class_name || "";
+                                            const isNursery = /nur/i.test(className);
+                                            return getMaxDate(isNursery ? 1 : 4);
+                                        })()}
+                                    />
+                                </div>
+
+                            <div className="space-y-2">
+    <Label>
+        Admission Number
+    </Label>
+    <Input
+        value={formData.admission_number}
+        onChange={set("admission_number")}
+        placeholder="Enter admission number"
+    />
+</div>
+
+                        
 
                                     <div className="space-y-2">
                                         <Label>Aadhar Number <span className="text-slate-400 text-xs font-normal">(Optional — 12 digits)</span></Label>
@@ -243,8 +289,8 @@ export default function EditProfileDialog({ profile, onSuccess, trigger, isTeach
                             Save Changes
                         </Button>
                     </div>
-                </form>
-            </DialogContent>
+               </form>
+</DialogContent>
         </Dialog>
     );
 }

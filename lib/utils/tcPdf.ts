@@ -27,6 +27,14 @@ export async function generateTcPdf(tc: any): Promise<void> {
 
     let y = 20;
 
+    // Add logo image before school name
+    try {
+        const logoImg = '/image.png';
+        doc.addImage(logoImg, 'PNG', pageW / 2 - 8, y - 5, 16, 16);
+    } catch (e) {
+        // Logo loading failed, continue without it
+    }
+
     doc.setFont('helvetica', 'bold');
     doc.setFontSize(20);
     doc.text(schoolName.toUpperCase(), pageW / 2, y, { align: 'center' });
@@ -180,6 +188,13 @@ ${tc.father_guardian_address || '—'}`, styles: { halign: 'left' as const } },
     doc.text(`Dated: ${tc.dated ? formatIndianDate(tc.dated) : '—'}`, margin, footerY);
     doc.text('P.T.O.', pageW / 2, footerY, { align: 'center' });
     doc.text('Head of Institution', pageW - margin, footerY, { align: 'right' });
+
+    // Add watermark
+    doc.setTextColor(200, 200, 200);
+    doc.setFontSize(60);
+    doc.setFont('helvetica', 'bold');
+    doc.text('MTPS', pageW / 2, pageH / 2, { align: 'center', angle: -45 });
+    doc.setTextColor(0, 0, 0);
 
     const fileName = `TC_${studentName.replace(/\s+/g, '_')}_${fileYear}.pdf`;
     doc.save(fileName);

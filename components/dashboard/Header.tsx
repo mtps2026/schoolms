@@ -70,9 +70,7 @@ export function Header({ onMenuClick, onToggleSidebar, isCollapsed }: HeaderProp
                     </button>
 
                     <div className="flex items-center gap-2">
-                        <div className="h-8 w-8 bg-gradient-to-br from-indigo-600 to-cyan-500 rounded-lg flex items-center justify-center text-white font-bold text-lg shadow-lg hover:shadow-xl transition-shadow">
-                            {schoolName ? schoolName.charAt(0).toUpperCase() : "S"}
-                        </div>
+                        <img src="/image.png" alt="MTPS Logo" className="h-8 w-8 object-contain" />
                         <span className="font-bold text-xl tracking-tight gradient-text-primary hidden sm:block">
                             {schoolName || "SchoolMS"}
                         </span>

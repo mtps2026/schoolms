@@ -102,7 +102,10 @@ export default function SchoolDetailPage() {
             {/* Header Info */}
             <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
                 <div>
-                    <h1 className="text-3xl font-bold gradient-text-primary">{school.school_name}</h1>
+                    <div className="flex items-center gap-3 mb-2">
+                        <img src="/image.png" alt="MTPS Logo" className="h-10 w-10 object-contain" />
+                        <h1 className="text-3xl font-bold gradient-text-primary">{school.school_name}</h1>
+                    </div>
                     <div className="flex flex-wrap items-center gap-2 text-muted-foreground mt-1 text-sm">
                         {school.address && <span>{school.address}</span>}
                         {school.address && school.email && <span>•</span>}
