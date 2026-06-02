@@ -2,12 +2,14 @@
 
 import { useState } from "react";
 import { supabase } from "@/lib/supabase";
+import { uppercaseTextFields } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Loader2 } from "lucide-react";
 import { toast } from "sonner";
+import FormWatermark from "@/components/common/FormWatermark";
 
 export default function AddSchoolForm({ onSuccess }: { onSuccess?: () => void }) {
     const [loading, setLoading] = useState(false);
@@ -24,9 +26,10 @@ export default function AddSchoolForm({ onSuccess }: { onSuccess?: () => void })
         setLoading(true);
 
         try {
+            const normalizedData = uppercaseTextFields(formData);
             const { error: insertError } = await supabase
                 .from("schools")
-                .insert([formData]);
+                .insert([normalizedData]);
 
             if (insertError) {
                 console.error("Supabase Error:", insertError);
@@ -44,8 +47,14 @@ export default function AddSchoolForm({ onSuccess }: { onSuccess?: () => void })
         }
     };
 
-    return (
-        <form onSubmit={handleSubmit} className="space-y-4">
+  return (
+    <div className="relative">
+        <FormWatermark />
+
+        <form
+            onSubmit={handleSubmit}
+            className="space-y-4 relative z-10"
+        >
             <div className="space-y-2">
                 <Label htmlFor="school_name">School Name</Label>
                 <Input
@@ -91,6 +100,7 @@ export default function AddSchoolForm({ onSuccess }: { onSuccess?: () => void })
                     Create School
                 </Button>
             </div>
-        </form>
-    );
+           </form>
+    </div>
+);
 }

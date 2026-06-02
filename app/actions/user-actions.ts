@@ -1,6 +1,7 @@
 "use server";
 
 import { supabaseAdmin } from "@/lib/supabase-admin";
+import { uppercaseTextFields } from "@/lib/utils";
 
 interface CreateUserParams {
     email: string;
@@ -13,6 +14,7 @@ interface CreateUserParams {
     dob?: string;
     class_id?: string;
     subject_name?: string;
+    admission_no?: string;
     // Extended student fields
     form_submitted_date?: string;
     aadhar_number?: string;
@@ -25,6 +27,7 @@ interface CreateUserParams {
 
 export async function createUserWithRole(params: CreateUserParams) {
     try {
+        const normalizedParams = uppercaseTextFields(params);
         const {
             email,
             password,
@@ -36,6 +39,7 @@ export async function createUserWithRole(params: CreateUserParams) {
             dob,
             class_id,
             subject_name,
+            admission_no,
             form_submitted_date,
             aadhar_number,
             mother_name,
@@ -43,7 +47,7 @@ export async function createUserWithRole(params: CreateUserParams) {
             last_institution,
             last_institution_class,
             last_institution_section,
-        } = params;
+        } = normalizedParams as CreateUserParams;
 
         // Special handling for Student role (no auth login / profiles table)
         if (role_name === "Student") {
@@ -55,6 +59,7 @@ export async function createUserWithRole(params: CreateUserParams) {
                     full_name,
                     email: email || null,
                     phone: phone || null,
+                    admission_no: admission_no || null,
                     current_address: address || null,
                     dob: dob || null,
                     form_submitted_date: form_submitted_date || null,

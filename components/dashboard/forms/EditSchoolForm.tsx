@@ -2,12 +2,14 @@
 
 import { useState } from "react";
 import { supabase } from "@/lib/supabase";
+import { uppercaseTextFields } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Loader2 } from "lucide-react";
 import { toast } from "sonner";
+import FormWatermark from "@/components/common/FormWatermark";
 
 interface EditSchoolFormProps {
     school: {
@@ -33,9 +35,10 @@ export default function EditSchoolForm({ school, onSuccess }: EditSchoolFormProp
         e.preventDefault();
         setLoading(true);
         try {
+            const normalizedData = uppercaseTextFields({ ...formData, modified_at: new Date().toISOString() });
             const { error } = await supabase
                 .from("schools")
-                .update({ ...formData, modified_at: new Date().toISOString() })
+                .update(normalizedData)
                 .eq("id", school.id);
 
             if (error) throw error;
@@ -50,7 +53,13 @@ export default function EditSchoolForm({ school, onSuccess }: EditSchoolFormProp
     };
 
     return (
-        <form onSubmit={handleSubmit} className="space-y-4">
+    <div className="relative">
+        <FormWatermark />
+
+        <form
+            onSubmit={handleSubmit}
+            className="space-y-4 relative z-10"
+        >
             <div className="space-y-2">
                 <Label htmlFor="edit_school_name">School Name</Label>
                 <Input
@@ -96,6 +105,7 @@ export default function EditSchoolForm({ school, onSuccess }: EditSchoolFormProp
                     Save Changes
                 </Button>
             </div>
-        </form>
-    );
+          </form>
+    </div>
+);
 }

@@ -11,6 +11,7 @@ import { toast } from "sonner";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { createUserWithRole } from "@/app/actions/user-actions";
 import { getAgeValidationError, getMaxDate, getMinDate } from "@/lib/utils/validation";
+import FormWatermark from "@/components/common/FormWatermark";
 
 export default function AddAdminForm({ onSuccess }: { onSuccess?: () => void }) {
     const [loading, setLoading] = useState(false);
@@ -92,8 +93,14 @@ export default function AddAdminForm({ onSuccess }: { onSuccess?: () => void }) 
         }
     };
 
-    return (
-        <form onSubmit={handleSubmit} className="space-y-4">
+  return (
+    <div className="relative">
+        <FormWatermark />
+
+        <form
+            onSubmit={handleSubmit}
+            className="space-y-4 relative z-10"
+        >
             {error && (
                 <div className="text-red-500 text-sm p-2 bg-red-50 rounded border border-red-100">
                     {error}
@@ -209,5 +216,6 @@ export default function AddAdminForm({ onSuccess }: { onSuccess?: () => void }) 
                 </Button>
             </div>
         </form>
+        </div>
     );
 }

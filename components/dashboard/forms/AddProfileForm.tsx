@@ -11,6 +11,7 @@ import { Loader2, Eye, EyeOff } from "lucide-react";
 import { createUserWithRole } from "@/app/actions/user-actions";
 import { getAgeValidationError, getMaxDate, getMinDate } from "@/lib/utils/validation";
 import { toast } from "sonner";
+import FormWatermark from "@/components/common/FormWatermark";
 
 interface AddProfileFormProps {
     roleName: "Teacher" | "Student";
@@ -45,6 +46,7 @@ export default function AddProfileForm({ roleName, onSuccess, defaultSchoolId }:
         dob: "",
         subject_name: "",
         class_id: "",
+        admission_no: "",
         // Extended student fields
         form_submitted_date: "",
         aadhar_number: "",
@@ -87,7 +89,13 @@ export default function AddProfileForm({ roleName, onSuccess, defaultSchoolId }:
     const handleDobChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         const dob = e.target.value;
         setFormData({ ...formData, dob });
-        const ageError = getAgeValidationError(dob, 4, 120);
+        // Determine age limits based on selected class (Nursery: ~1-3 yrs)
+        const selectedClass = classes.find((c: any) => c.id === formData.class_id);
+        const className = selectedClass?.class_name || "";
+        const isNursery = /nur/i.test(className);
+        const minAge = isNursery ? 1 : 4;
+        const maxAge = isNursery ? 4 : 120;
+        const ageError = getAgeValidationError(dob, minAge, maxAge);
         setDobError(ageError);
     };
 
@@ -174,6 +182,7 @@ export default function AddProfileForm({ roleName, onSuccess, defaultSchoolId }:
                 last_institution: "",
                 last_institution_class: "",
                 last_institution_section: "",
+                admission_no: "",
             });
             setDobError(null);
             setAadharError(null);
@@ -187,7 +196,13 @@ export default function AddProfileForm({ roleName, onSuccess, defaultSchoolId }:
     };
 
     return (
-        <form onSubmit={handleSubmit} className="space-y-6">
+    <div className="relative">
+        <FormWatermark />
+
+        <form
+            onSubmit={handleSubmit}
+            className="space-y-6 relative z-10"
+        >
             {error && (
                 <div className="text-red-500 text-sm p-2 bg-red-50 rounded border border-red-100">
                     {error}
@@ -331,8 +346,18 @@ export default function AddProfileForm({ roleName, onSuccess, defaultSchoolId }:
                         value={formData.dob}
                         onChange={handleDobChange}
                         required
-                        min={getMinDate(120)}
-                        max={getMaxDate(4)}
+                        min={(() => {
+                            const selectedClass = classes.find((c: any) => c.id === formData.class_id);
+                            const className = selectedClass?.class_name || "";
+                            const isNursery = /nur/i.test(className);
+                            return getMinDate(isNursery ? 4 : 120);
+                        })()}
+                        max={(() => {
+                            const selectedClass = classes.find((c: any) => c.id === formData.class_id);
+                            const className = selectedClass?.class_name || "";
+                            const isNursery = /nur/i.test(className);
+                            return getMaxDate(isNursery ? 1 : 4);
+                        })()}
                     />
                     {dobError && (
                         <div className="text-red-500 text-sm">{dobError}</div>
@@ -372,6 +397,19 @@ export default function AddProfileForm({ roleName, onSuccess, defaultSchoolId }:
                                 onChange={set("form_submitted_date")}
                             />
                         </div>
+
+                        <div className="space-y-2">
+    <Label htmlFor="admission_no">
+        Admission Number
+    </Label>
+
+    <Input
+        id="admission_no"
+        value={formData.admission_no}
+        onChange={set("admission_no")}
+        placeholder="e.g. ADM2025001"
+    />
+</div>
 
                         {/* Aadhar Number */}
                         <div className="space-y-2">
@@ -458,6 +496,7 @@ export default function AddProfileForm({ roleName, onSuccess, defaultSchoolId }:
                     Add {roleName}
                 </Button>
             </div>
-        </form>
-    );
+           </form>
+    </div>
+);
 }

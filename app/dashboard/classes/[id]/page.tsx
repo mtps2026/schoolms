@@ -233,7 +233,13 @@ export default function ClassDetailsPage() {
                 <div>
                     <h2 className="text-3xl font-bold gradient-text-primary tracking-tight">{classData.class_name}</h2>
                     <p className="text-slate-600 mt-1">
-                        {classData.schools?.school_name && <span>{classData.schools.school_name} • </span>}
+                        {classData.schools?.school_name && (
+                            <span className="flex items-center gap-2">
+                                <img src="/image.png" alt="MTPS Logo" className="h-4 w-4 object-contain" />
+                                <span>{classData.schools.school_name}</span>
+                                <span>•</span>
+                            </span>
+                        )}
                         {classData.academic_year}
                         {classData.profiles?.full_name && (
                             <span> • Class Teacher: <strong>{classData.profiles.full_name}</strong></span>

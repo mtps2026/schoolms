@@ -2,12 +2,14 @@
 
 import { useState, useEffect } from "react";
 import { supabase } from "@/lib/supabase";
+import { uppercaseTextFields } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Loader2 } from "lucide-react";
 import { toast } from "sonner";
+import FormWatermark from "@/components/common/FormWatermark";
 
 interface AddClassFormProps {
     onSuccess?: () => void;
@@ -48,9 +50,10 @@ export default function AddClassForm({ onSuccess, defaultSchoolId }: AddClassFor
         setError(null);
 
         try {
+            const normalizedData = uppercaseTextFields({ ...formData, school_id: schoolIdToUse });
             const { error: insertError } = await supabase
                 .from("classes")
-                .insert([{ ...formData, school_id: schoolIdToUse }]);
+                .insert([normalizedData]);
 
             if (insertError) throw insertError;
 
@@ -66,7 +69,13 @@ export default function AddClassForm({ onSuccess, defaultSchoolId }: AddClassFor
     };
 
     return (
-        <form onSubmit={handleSubmit} className="space-y-4">
+    <div className="relative">
+        <FormWatermark />
+
+        <form
+            onSubmit={handleSubmit}
+            className="space-y-4 relative z-10"
+        >
             {error && (
                 <div className="text-red-500 text-sm p-2 bg-red-50 rounded border border-red-100">
                     {error}
@@ -123,5 +132,6 @@ export default function AddClassForm({ onSuccess, defaultSchoolId }: AddClassFor
                 </Button>
             </div>
         </form>
+        </div>
     );
 }

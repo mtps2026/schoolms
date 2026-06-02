@@ -15,6 +15,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Loader2, Plus, Trash2, ArrowLeft, Save } from "lucide-react";
 import { autoGrade, ReportCard, ReportCardSubject } from "@/lib/hooks/useReportCards";
 import { toast } from "sonner";
+import FormWatermark from "@/components/common/FormWatermark";
 
 // ── Constants ──────────────────────────────────────────────────────────────
 const TERMS = ["Term 1", "Term 2", "Final Exam"];
@@ -304,7 +305,10 @@ export default function ReportCardForm({
     }
 
     return (
-        <div className="space-y-6">
+    <div className="relative">
+        <FormWatermark />
+
+        <div className="space-y-6 relative z-10">
             {/* School Selector for Superadmin */}
             {!schoolId && role === "Superadmin" && (
                 <Card className="border-amber-200 bg-amber-50">
@@ -547,6 +551,7 @@ export default function ReportCardForm({
                     {isEdit ? "Save Changes" : "Create Report Card"}
                 </Button>
             </div>
+        </div>
         </div>
     );
 }

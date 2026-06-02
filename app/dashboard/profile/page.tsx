@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import { useAuth } from "@/context/AuthContext";
 import { supabase } from "@/lib/supabase";
+import { uppercaseTextFields } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -37,12 +38,14 @@ export default function ProfilePage() {
 
         setSaving(true);
         try {
+            const normalizedData = uppercaseTextFields(formData);
             const { error } = await supabase
                 .from("profiles")
-                .update(formData)
+                .update(normalizedData)
                 .eq("id", user.id);
 
             if (error) throw error;
+            setFormData(normalizedData);
             toast.success("Profile updated successfully");
         } catch (err: any) {
             console.error(err);

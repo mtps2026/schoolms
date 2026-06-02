@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { supabase } from "@/lib/supabase";
+import { uppercaseTextFields } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -9,6 +10,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Loader2, Save } from "lucide-react";
 import { toast } from "sonner";
 import { useAuth } from "@/context/AuthContext";
+import FormWatermark from "@/components/common/FormWatermark";
 
 // The standard class labels matching the TC form
 const CLASS_LABELS = ["P.G.", "Nur.", "J.K.G.", "S.K.G.", "I", "II", "III", "IV", "V", "VI", "VII", "VIII"];
@@ -184,9 +186,10 @@ export default function TCForm({ student, tc, onSuccess }: TCFormProps) {
 
             if (tc?.id) {
                 // Update existing
+                const normalizedCleanData = uppercaseTextFields({ ...cleanData, modified_at: new Date().toISOString() });
                 const { error } = await supabase
                     .from("transfer_certificates")
-                    .update({ ...cleanData, modified_at: new Date().toISOString() })
+                    .update(normalizedCleanData)
                     .eq("id", tc.id);
                 if (error) throw error;
                 tcId = tc.id;
@@ -195,14 +198,15 @@ export default function TCForm({ student, tc, onSuccess }: TCFormProps) {
                 await supabase.from("tc_academic_records").delete().eq("tc_id", tcId);
             } else {
                 // Create new
+                const normalizedCleanData = uppercaseTextFields({
+                    ...cleanData,
+                    student_id: student.id,
+                    school_id: student.school_id,
+                    created_by: profile?.id || null,
+                });
                 const { data, error } = await supabase
                     .from("transfer_certificates")
-                    .insert({
-                        ...cleanData,
-                        student_id: student.id,
-                        school_id: student.school_id,
-                        created_by: profile?.id || null,
-                    })
+                    .insert(normalizedCleanData)
                     .select("id")
                     .single();
                 if (error) throw error;
@@ -210,16 +214,18 @@ export default function TCForm({ student, tc, onSuccess }: TCFormProps) {
             }
 
             // Insert academic records
-            const recordsToInsert = records
-                .filter((r) => r.class_label)
-                .map((r, i) => ({ 
-                    ...r, 
-                    tc_id: tcId, 
-                    sort_order: i,
-                    date_of_admission: r.date_of_admission || null,
-                    date_of_promotion: r.date_of_promotion || null,
-                    date_of_removal: r.date_of_removal || null,
-                }));
+            const recordsToInsert = uppercaseTextFields(
+                records
+                    .filter((r) => r.class_label)
+                    .map((r, i) => ({ 
+                        ...r, 
+                        tc_id: tcId, 
+                        sort_order: i,
+                        date_of_admission: r.date_of_admission || null,
+                        date_of_promotion: r.date_of_promotion || null,
+                        date_of_removal: r.date_of_removal || null,
+                    }))
+            );
 
             if (recordsToInsert.length > 0) {
                 const { error: recErr } = await supabase.from("tc_academic_records").insert(recordsToInsert);
@@ -236,7 +242,10 @@ export default function TCForm({ student, tc, onSuccess }: TCFormProps) {
     };
 
     return (
-        <form onSubmit={handleSubmit} className="space-y-6">
+    <div className="relative">
+        <FormWatermark />
+
+        <form onSubmit={handleSubmit} className="space-y-6 relative z-10">
             {/* ── File Numbers ── */}
             <section className="space-y-3">
                 <h3 className="text-sm font-semibold text-slate-500 uppercase tracking-wider border-b border-slate-100 pb-2">
@@ -269,7 +278,7 @@ export default function TCForm({ student, tc, onSuccess }: TCFormProps) {
                 </div>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div className="space-y-1.5">
-                        <Label htmlFor="tc_apar_number">APAR Number</Label>
+                        <Label htmlFor="tc_apar_number">APAAR Number</Label>
                         <Input id="tc_apar_number" value={formData.apar_number} onChange={setField("apar_number")} placeholder="e.g. APAR-001" />
                     </div>
                     <div className="space-y-1.5">
@@ -412,5 +421,6 @@ export default function TCForm({ student, tc, onSuccess }: TCFormProps) {
                 </Button>
             </div>
         </form>
-    );
+    </div>
+);
 }

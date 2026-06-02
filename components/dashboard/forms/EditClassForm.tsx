@@ -2,12 +2,14 @@
 
 import { useState, useEffect } from "react";
 import { supabase } from "@/lib/supabase";
+import { uppercaseTextFields } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Loader2 } from "lucide-react";
 import { toast } from "sonner";
+import FormWatermark from "@/components/common/FormWatermark";
 
 interface EditClassFormProps {
     cls: {
@@ -49,14 +51,15 @@ export default function EditClassForm({ cls, onSuccess }: EditClassFormProps) {
         e.preventDefault();
         setLoading(true);
         try {
+            const normalizedData = uppercaseTextFields({
+                class_name: formData.class_name,
+                academic_year: formData.academic_year,
+                class_teacher_id: formData.class_teacher_id || null,
+                modified_at: new Date().toISOString(),
+            });
             const { error } = await supabase
                 .from("classes")
-                .update({
-                    class_name: formData.class_name,
-                    academic_year: formData.academic_year,
-                    class_teacher_id: formData.class_teacher_id || null,
-                    modified_at: new Date().toISOString(),
-                })
+                .update(normalizedData)
                 .eq("id", cls.id);
 
             if (error) throw error;
@@ -69,8 +72,14 @@ export default function EditClassForm({ cls, onSuccess }: EditClassFormProps) {
         }
     };
 
-    return (
-        <form onSubmit={handleSubmit} className="space-y-4">
+   return (
+    <div className="relative">
+        <FormWatermark />
+
+        <form
+            onSubmit={handleSubmit}
+            className="space-y-4 relative z-10"
+        >
             <div className="space-y-2">
                 <Label htmlFor="edit_class_name">Class Name</Label>
                 <Input
@@ -118,6 +127,7 @@ export default function EditClassForm({ cls, onSuccess }: EditClassFormProps) {
                     Save Changes
                 </Button>
             </div>
-        </form>
-    );
+                </form>
+    </div>
+);
 }
