@@ -1,7 +1,7 @@
 // Client-only PDF generation for Transfer Certificates.
 // Uses jsPDF and jsPDF-AutoTable to create a one-page clinical TC PDF.
 
-const TC_CLASS_LABELS = ["P.G.", "Nur.", "J.K.G.", "S.K.G.", "I", "II", "III", "IV", "V", "VI", "VII", "VIII"];
+const TC_CLASS_LABELS = ["Nur.", "J.K.G.", "S.K.G.", "I", "II", "III", "IV", "V", "VI", "VII", "VIII"];
 
 function formatIndianDate(value?: string | null) {
     if (!value) return "—";
@@ -9,95 +9,211 @@ function formatIndianDate(value?: string | null) {
 }
 
 export async function generateTcPdf(tc: any): Promise<void> {
-    const jsPDFModule = await import('jspdf');
+    const jsPDFModule = await import("jspdf");
     const jsPDF = jsPDFModule.default;
-    const autoTable = (await import('jspdf-autotable')).default;
+    const autoTable = (await import("jspdf-autotable")).default;
 
-    const doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
+    const doc = new jsPDF({
+        orientation: "portrait",
+        unit: "mm",
+        format: "a4",
+    });
+
     const pageW = doc.internal.pageSize.getWidth();
     const pageH = doc.internal.pageSize.getHeight();
-    const margin = 14;
+    const margin = 9;
     const contentW = pageW - margin * 2;
 
-    const schoolName = tc.schools?.school_name || tc.students_data?.schools?.school_name || 'School Name';
-    const schoolAddress = tc.schools?.address || '';
-    const schoolPhone = tc.schools?.phone || '';
-    const studentName = tc.students_data?.full_name || tc.scholar_name || 'Student Name';
-    const fileYear = tc.dated ? new Date(tc.dated).getFullYear().toString() : tc.created_at ? new Date(tc.created_at).getFullYear().toString() : 'Year';
+    const schoolName =
+        tc.schools?.school_name ||
+        tc.students_data?.schools?.school_name ||
+        "School Name";
 
-    let y = 20;
+    const studentName = (
+        tc.students_data?.full_name ||
+        tc.scholar_name ||
+        "Student Name"
+    ).toUpperCase();
 
-    // Add logo image before school name
-    try {
-        const logoImg = '/image.png';
-        doc.addImage(logoImg, 'PNG', pageW / 2 - 8, y - 5, 16, 16);
-    } catch (e) {
-        // Logo loading failed, continue without it
-    }
+    const fileYear =
+        tc.dated
+            ? new Date(tc.dated).getFullYear().toString()
+            : tc.created_at
+            ? new Date(tc.created_at).getFullYear().toString()
+            : "Year";
 
-    doc.setFont('helvetica', 'bold');
-    doc.setFontSize(20);
-    doc.text(schoolName.toUpperCase(), pageW / 2, y, { align: 'center' });
-
-    y += 7;
     doc.setDrawColor(0);
-    doc.setLineWidth(1.1);
-    doc.line(margin, y, pageW - margin, y);
+    doc.setTextColor(0);
 
-    y += 12;
-    const topCenterX = pageW / 2;
-    const topRightX = pageW - margin;
-    const drawHeaderCell = (label: string, value: string | null | undefined, x: number, align: 'left' | 'center' | 'right') => {
-        doc.setFontSize(8);
-        doc.setFont('helvetica', 'bold');
-        doc.text(label, x, y, { align });
-        doc.setFont('helvetica', 'normal');
-        doc.setFontSize(10);
-        doc.text(value || '—', x, y + 5, { align });
-    };
+    // =====================================================================
+    // WATERMARK — centered logo at low opacity via canvas (reliable cross-env)
+    // =====================================================================
+    try {
+        const wmSize = 90;
+        const wmX = (pageW - wmSize) / 2;
+        const wmY = (pageH - wmSize) / 2;
 
-    drawHeaderCell('Admission File No.', tc.admission_file_no, margin, 'left');
-    drawHeaderCell('Withdrawal File No.', tc.withdrawal_file_no, topCenterX, 'center');
-    drawHeaderCell('TC File No.', tc.tc_file_no, topRightX, 'right');
+        const canvas = document.createElement("canvas");
+        canvas.width = 300;
+        canvas.height = 300;
+        const ctx = canvas.getContext("2d");
+        if (ctx) {
+            const img = new Image();
+            await new Promise<void>((resolve) => {
+                img.onload = () => {
+                    ctx.clearRect(0, 0, 300, 300);
+                    ctx.globalAlpha = 0.08;
+                    ctx.drawImage(img, 0, 0, 300, 300);
+                    resolve();
+                };
+                img.onerror = () => resolve();
+                img.src = "/image.png";
+            });
+            const dataUrl = canvas.toDataURL("image/png");
+            doc.addImage(dataUrl, "PNG", wmX, wmY, wmSize, wmSize);
+        }
+    } catch (e) {}
 
-    y += 18;
-    doc.setFont('helvetica', 'bold');
-    doc.setFontSize(14);
-    doc.text("Scholar's Register & Transfer Certificate Form", pageW / 2, y, { align: 'center' });
+    let y = 12;
 
-    y += 14;
-    drawHeaderCell('Aadhar No.', tc.aadhar_number, margin, 'left');
-    drawHeaderCell('Register No.', tc.scholar_register_no, topRightX, 'right');
+    // =====================================================================
+    // ROW 1: Admission No (left) | Withdrawal No (center) | TC File No (right)
+    // =====================================================================
+    doc.setFont("times", "bold");
+    doc.setFontSize(7);
 
-    y += 18;
-    drawHeaderCell('APAR No.', tc.apar_number, margin, 'left');
-    drawHeaderCell('PAN No.', tc.pan_number, topRightX, 'right');
+    // Admission File No — left
+    doc.text("Admission File No.", margin, y);
+    doc.line(margin + 28, y + 0.5, margin + 62, y + 0.5);
+    doc.setFont("times", "normal");
+    doc.text(tc.admission_file_no || "", margin + 30, y);
 
-    y += 20;
-    doc.setFont('helvetica', 'bold');
-    doc.setFontSize(9);
+    // Withdrawal File No — center
+    doc.setFont("times", "bold");
+    doc.text("Withdrawal File No.", pageW / 2 - 24, y);
+    doc.line(pageW / 2 + 8, y + 0.5, pageW / 2 + 42, y + 0.5);
+    doc.setFont("times", "normal");
+    doc.text(tc.withdrawal_file_no || "", pageW / 2 + 10, y);
 
+    // TC File No — right
+    doc.setFont("times", "bold");
+    doc.text("TC File No.", pageW - margin - 38, y);
+    doc.line(pageW - margin - 22, y + 0.5, pageW - margin, y + 0.5);
+    doc.setFont("times", "normal");
+    doc.text(tc.tc_file_no || "", pageW - margin - 21, y);
+
+    // =====================================================================
+    // ROW 2: Aadhar No (left) | Title line 1 (center) | Register No (right)
+    // =====================================================================
+    y += 5;
+
+    // Aadhar — left
+    doc.setFont("times", "bold");
+    doc.setFontSize(7);
+    doc.text("Aadhar No.", margin, y);
+    doc.line(margin + 18, y + 0.5, margin + 62, y + 0.5);
+    doc.setFont("times", "normal");
+    doc.text(tc.aadhar_number || "", margin + 20, y);
+
+    // Register No — right
+    doc.setFont("times", "bold");
+    doc.text("Register No.", pageW - margin - 38, y);
+    doc.line(pageW - margin - 22, y + 0.5, pageW - margin, y + 0.5);
+    doc.setFont("times", "normal");
+    doc.text(tc.scholar_register_no || "", pageW - margin - 21, y);
+
+    // Title line 1 — centered vertically with row 2, with more spacing from top
+    doc.setFont("times", "bold");
+    doc.setFontSize(10);
+    doc.text("Scholar's Register &", pageW / 2, y + 3, { align: "center" });
+
+    // =====================================================================
+    // ROW 3: PAN No (left) | Title line 2 (center) | APAR ID (right)
+    // =====================================================================
+    y += 5;
+
+    // PAN No — left
+    doc.setFont("times", "bold");
+    doc.setFontSize(7);
+    doc.text("PAN No.", margin, y);
+    doc.line(margin + 18, y + 0.5, margin + 62, y + 0.5);
+    doc.setFont("times", "normal");
+    doc.text(tc.pan_number || "", margin + 20, y);
+
+    // APAR ID — right
+    doc.setFont("times", "bold");
+    doc.text("APAAR ID", pageW - margin - 38, y);
+    doc.line(pageW - margin - 22, y + 0.5, pageW - margin, y + 0.5);
+    doc.setFont("times", "normal");
+    doc.text(tc.apar_number || "", pageW - margin - 21, y);
+
+    // Title line 2 — centered vertically with row 3, with more spacing from top
+    doc.setFont("times", "bold");
+    doc.setFontSize(10);
+    doc.text("Transfer Certificate Form", pageW / 2, y + 3, { align: "center" });
+
+    y += 5;
+
+    // =====================================================================
+    // ROW 3: LOGO left-aligned at margin; SCHOOL NAME + ADDRESS centered
+    // =====================================================================
+    const logoH = 16;
+    const logoW = 16;
+    const schoolFontSize = 15;
+    const addressFontSize = 7;
+
+    // Draw logo — pinned to left margin
+    try {
+        doc.addImage("/image.png", "PNG", margin, y, logoW, logoH);
+    } catch (e) {}
+
+    // School name — centered on full page width, vertically mid of logo
+    doc.setFont("times", "bold");
+    doc.setFontSize(schoolFontSize);
+    const schoolText = schoolName.toUpperCase();
+    doc.text(schoolText, pageW / 2, y + logoH / 2, { align: "center" });
+
+    // Address lines — centered below school name
+    y += logoH + 1;
+    doc.setFont("times", "normal");
+    doc.setFontSize(addressFontSize);
+    doc.text(
+        "Moh. Jawahar Nagar, Khadgujar Road, Gajraula, Distt. Amroha (U.P.)",
+        pageW / 2,
+        y,
+        { align: "center" }
+    );
+    y += 4;
+    doc.text("Contact: 9997024689", pageW / 2, y, { align: "center" });
+
+    y += 4;
+
+    // =====================================================================
+    // DETAILS TABLE
+    // =====================================================================
     const detailsBody: any[][] = [
         [
-            { content: "Scholar's Name", styles: { halign: 'left' as const, fontStyle: 'bold' as const, fontSize: 9 } },
-            { content: "Father's / Guardian's name & Address", styles: { halign: 'left' as const, fontStyle: 'bold' as const, fontSize: 9 } },
-            { content: 'Last Institution attended before joining this one if any', styles: { halign: 'left' as const, fontStyle: 'bold' as const, fontSize: 9 } },
+            { content: "Scholar's Name", styles: { fontStyle: "bold", fontSize: 7 } },
+            { content: "Father's / Guardian's name & Address", styles: { fontStyle: "bold", fontSize: 7 } },
+            { content: "Last Institution attended before joining this one if any", styles: { fontStyle: "bold", fontSize: 7 } },
         ],
         [
-            { content: studentName, styles: { halign: 'left' as const } },
-            { content: `${tc.father_guardian_name || '—'}
-${tc.father_guardian_address || '—'}`, styles: { halign: 'left' as const } },
-            { content: tc.last_institution_before || '—', styles: { halign: 'left' as const } },
+            { content: studentName, styles: { fontSize: 7 } },
+            {
+                content: `${tc.father_guardian_name || "—"}\n${tc.father_guardian_address || "—"}`,
+                styles: { fontSize: 7 },
+            },
+            { content: tc.last_institution_before || "—", styles: { fontSize: 7 } },
         ],
         [
-            { content: "Caste or Religion", styles: { halign: 'left' as const, fontStyle: 'bold' as const, fontSize: 9 } },
-            { content: "Mother's Name", styles: { halign: 'left' as const, fontStyle: 'bold' as const, fontSize: 9 } },
-            { content: 'Length of Residence in this Province', styles: { halign: 'left' as const, fontStyle: 'bold' as const, fontSize: 9 } },
+            { content: "Caste or Religion", styles: { fontStyle: "bold", fontSize: 7 } },
+            { content: "Mother's Name", styles: { fontStyle: "bold", fontSize: 7 } },
+            { content: "Length of Residence in this Province", styles: { fontStyle: "bold", fontSize: 7 } },
         ],
         [
-            { content: tc.caste_or_religion || '—', styles: { halign: 'left' as const } },
-            { content: tc.mother_name || '—', styles: { halign: 'left' as const } },
-            { content: tc.length_of_residence || '—', styles: { halign: 'left' as const } },
+            { content: tc.caste_or_religion || "—", styles: { fontSize: 7 } },
+            { content: tc.mother_name || "—", styles: { fontSize: 7 } },
+            { content: tc.length_of_residence || "—", styles: { fontSize: 7 } },
         ],
     ];
 
@@ -105,97 +221,169 @@ ${tc.father_guardian_address || '—'}`, styles: { halign: 'left' as const } },
         startY: y,
         head: [],
         body: detailsBody,
-        theme: 'grid',
-        styles: { fontSize: 8.5, cellPadding: 2.4, minCellHeight: 8, valign: 'top' },
-        columnStyles: {
-            0: { cellWidth: contentW * 0.3 },
-            1: { cellWidth: contentW * 0.42 },
-            2: { cellWidth: contentW * 0.28 },
-        },
+        theme: "grid",
         margin: { left: margin, right: margin },
         tableWidth: contentW,
+        styles: {
+            font: "times",
+            fontSize: 7,
+            cellPadding: { top: 1, right: 1.5, bottom: 1, left: 1.5 },
+            lineWidth: 0.3,
+            lineColor: [0, 0, 0],
+            valign: "top",
+            textColor: [0, 0, 0],
+            overflow: "linebreak",
+            fillColor: [255, 255, 255],
+            minCellHeight: 5,
+        },
+        columnStyles: {
+            0: { cellWidth: 45 },
+            1: { cellWidth: 80 },
+            2: { cellWidth: contentW - 125 },
+        },
     });
 
-    const detailEndY = (doc as any).lastAutoTable?.finalY || y + 28;
-    const dobLines = [
-        `Date of Birth of the Scholar (in figure & words): ${tc.dob ? formatIndianDate(tc.dob) : '—'}`,
-        tc.dob_in_words ? `(${tc.dob_in_words})` : '—',
-    ];
+    y = ((doc as any).lastAutoTable?.finalY || y + 24) + 1;
 
-    doc.setFont('helvetica', 'bold');
-    doc.setFontSize(9);
-    doc.text(dobLines[0], margin, detailEndY + 10);
-    doc.setFont('helvetica', 'normal');
-    doc.text(dobLines[1], margin, detailEndY + 15);
+    // =====================================================================
+    // DOB BOX
+    // =====================================================================
+    doc.setLineWidth(0.3);
+    doc.setDrawColor(0, 0, 0);
+    const dobBoxH = 11;
+    doc.rect(margin, y, contentW, dobBoxH);
 
-    const recordStartY = detailEndY + 26;
+    doc.setFont("times", "bold");
+    doc.setFontSize(7);
+    doc.text(
+        `Date of Birth of the Scholar (in figure & words): ${tc.dob ? formatIndianDate(tc.dob) : "—"}`,
+        margin + 2,
+        y + 4
+    );
+    if (tc.dob_in_words) {
+        doc.setFont("times", "normal");
+        doc.setFontSize(7);
+        doc.text(`(${tc.dob_in_words})`, margin + 2, y + 8.5);
+    }
+
+    y += dobBoxH + 1;
+
+    // =====================================================================
+    // CALCULATE ROW HEIGHT to fill remaining page space
+    // =====================================================================
+    const footerY = pageH - 18;
+    const certLineH = 6;
+    const tableHeadH = 13;
+    const availableForTableBody = footerY - certLineH - 4 - tableHeadH - y;
+    const rowCount = TC_CLASS_LABELS.length;
+    const rowH = Math.max(6, availableForTableBody / rowCount);
+
+    // =====================================================================
+    // SCHOLAR'S REGISTER TABLE
+    // =====================================================================
     const records = Array.isArray(tc.tc_academic_records) ? tc.tc_academic_records : [];
-    const recordsByLabel = TC_CLASS_LABELS.reduce((acc: Record<string, any>, label) => {
-        acc[label] = records.find((record: any) => record.class_label === label) || {};
-        return acc;
-    }, {} as Record<string, any>);
+
+    const recordsByLabel = TC_CLASS_LABELS.reduce(
+        (acc: Record<string, any>, label) => {
+            acc[label] = records.find((r: any) => r.class_label === label) || {};
+            return acc;
+        },
+        {} as Record<string, any>
+    );
 
     autoTable(doc, {
-        startY: recordStartY,
-        head: [[
-            'Class', 'Admission', 'Promotion', 'Removal', 'Cause of Removal', 'Year/Session', 'Conduct', 'Work', 'Signature'
-        ]],
+        startY: y,
+        head: [
+            [
+                { content: "Class" },
+                { content: "Date of\nAdmission" },
+                { content: "Date of\nPromotion" },
+                { content: "Date of\nRemoval" },
+                { content: "Cause of Removal e.g. non payment of dues, removal of family, expulsion etc." },
+                { content: "Year of\nSession" },
+                { content: "Conduct\nconcession\nif any less" },
+                { content: "Work" },
+                { content: "Signature" },
+            ],
+        ],
         body: TC_CLASS_LABELS.map((label) => {
             const rec = recordsByLabel[label] || {};
             return [
                 label,
-                rec.date_of_admission ? new Date(rec.date_of_admission).toLocaleDateString('en-IN') : '',
-                rec.date_of_promotion ? new Date(rec.date_of_promotion).toLocaleDateString('en-IN') : '',
-                rec.date_of_removal ? new Date(rec.date_of_removal).toLocaleDateString('en-IN') : '',
-                rec.cause_of_removal || '',
-                rec.year_session || '',
-                rec.conduct || '',
-                rec.work || '',
-                rec.signature || '',
+                rec.date_of_admission ? new Date(rec.date_of_admission).toLocaleDateString("en-IN") : "",
+                rec.date_of_promotion ? new Date(rec.date_of_promotion).toLocaleDateString("en-IN") : "",
+                rec.date_of_removal ? new Date(rec.date_of_removal).toLocaleDateString("en-IN") : "",
+                rec.cause_of_removal || "",
+                rec.year_session || "",
+                rec.conduct || "",
+                rec.work || "",
+                rec.signature || "",
             ];
         }),
-        styles: { fontSize: 7.5, cellPadding: 1.4, overflow: 'linebreak', valign: 'middle', minCellHeight: 6 },
-        headStyles: { fillColor: [245, 245, 245], textColor: [33, 33, 33], fontStyle: 'bold', fontSize: 8 },
+        theme: "grid",
         margin: { left: margin, right: margin },
         tableWidth: contentW,
-        pageBreak: 'avoid',
+        pageBreak: "avoid",
+        styles: {
+            font: "times",
+            fontSize: 6.5,
+            cellPadding: { top: 1, right: 1, bottom: 1, left: 1 },
+            minCellHeight: rowH,
+            lineWidth: 0.3,
+            lineColor: [0, 0, 0],
+            textColor: [0, 0, 0],
+            valign: "middle",
+            halign: "center",
+            overflow: "linebreak",
+            fillColor: [255, 255, 255],
+        },
+        headStyles: {
+            font: "times",
+            fontStyle: "bold",
+            fontSize: 6,
+            fillColor: [255, 255, 255],
+            textColor: [0, 0, 0],
+            lineWidth: 0.3,
+            lineColor: [0, 0, 0],
+            halign: "center",
+            valign: "middle",
+            minCellHeight: tableHeadH,
+        },
         columnStyles: {
-            0: { cellWidth: 14 },
+            0: { cellWidth: 12 },
             1: { cellWidth: 18 },
             2: { cellWidth: 18 },
-            3: { cellWidth: 16 },
-            4: { cellWidth: 34 },
+            3: { cellWidth: 18 },
+            4: { cellWidth: 44 },
             5: { cellWidth: 16 },
-            6: { cellWidth: 15 },
-            7: { cellWidth: 15 },
-            8: { cellWidth: 18 },
+            6: { cellWidth: 18 },
+            7: { cellWidth: 14 },
+            8: { cellWidth: contentW - 158 },
         },
     });
 
-    const recordEndY = (doc as any).lastAutoTable?.finalY || recordStartY + 70;
-    const remarks = tc.certification_remarks || 'Certified that the above Scholar\'s Register has been posted up-to-date of the Scholar\'s leaving as required by the Departmental Rules.';
-    const remarkLines = doc.splitTextToSize(remarks, contentW);
+    const tableEndY = (doc as any).lastAutoTable?.finalY || y + 55;
 
-    doc.setFont('helvetica', 'bold');
-    doc.setFontSize(9);
-    doc.text('Certification Remarks:', margin, recordEndY + 8);
-    doc.setFont('helvetica', 'normal');
-    doc.setFontSize(8.5);
-    doc.text(remarkLines, margin, recordEndY + 13);
+    // =====================================================================
+    // CERTIFICATION TEXT — centered, immediately after table
+    // =====================================================================
+    const remarks =
+        tc.certification_remarks ||
+        "Certified that the above Scholar's Register has been, posted up-to-date of the Scholar's leaving as required by the Departmental Rules.";
 
-    const footerY = Math.max(recordEndY + 25, pageH - 32);
-    doc.setFontSize(9);
-    doc.text(`Dated: ${tc.dated ? formatIndianDate(tc.dated) : '—'}`, margin, footerY);
-    doc.text('P.T.O.', pageW / 2, footerY, { align: 'center' });
-    doc.text('Head of Institution', pageW - margin, footerY, { align: 'right' });
+    doc.setFont("times", "normal");
+    doc.setFontSize(6.5);
+    const remarkLines = doc.splitTextToSize(remarks, contentW - 2);
+    doc.text(remarkLines, pageW / 2, tableEndY + 3, { align: "center" });
 
-    // Add watermark
-    doc.setTextColor(200, 200, 200);
-    doc.setFontSize(60);
-    doc.setFont('helvetica', 'bold');
-    doc.text('MTPS', pageW / 2, pageH / 2, { align: 'center', angle: -45 });
-    doc.setTextColor(0, 0, 0);
+    // =====================================================================
+    // FOOTER — fixed at page bottom, no P.T.O.
+    // =====================================================================
+    doc.setFont("times", "normal");
+    doc.setFontSize(8);
+    doc.text(`Dated: ${tc.dated ? formatIndianDate(tc.dated) : ""}`, margin, footerY);
+    doc.text("Head of Institution", pageW - margin, footerY, { align: "right" });
 
-    const fileName = `TC_${studentName.replace(/\s+/g, '_')}_${fileYear}.pdf`;
+    const fileName = `TC_${studentName.replace(/\s+/g, "_")}_${fileYear}.pdf`;
     doc.save(fileName);
 }

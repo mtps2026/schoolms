@@ -10,7 +10,7 @@ const formatDate = (d: string | null) => {
     return new Date(d).toLocaleDateString("en-IN", { day: "2-digit", month: "long", year: "numeric" });
 };
 
-const CLASS_LABELS = ["P.G.", "Nur.", "J.K.G.", "S.K.G.", "I", "II", "III", "IV", "V", "VI", "VII", "VIII"];
+const CLASS_LABELS = ["Nur.", "J.K.G.", "S.K.G.", "I", "II", "III", "IV", "V", "VI", "VII", "VIII"];
 
 export default function TCPrintPage() {
     const { id, tcId } = useParams();

@@ -13,7 +13,7 @@ import { useAuth } from "@/context/AuthContext";
 import FormWatermark from "@/components/common/FormWatermark";
 
 // The standard class labels matching the TC form
-const CLASS_LABELS = ["P.G.", "Nur.", "J.K.G.", "S.K.G.", "I", "II", "III", "IV", "V", "VI", "VII", "VIII"];
+const CLASS_LABELS = ["Nur.", "J.K.G.", "S.K.G.", "I", "II", "III", "IV", "V", "VI", "VII", "VIII"];
 
 /** Validate a 12-digit Aadhar number */
 function validateAadhar(val: string): string | null {

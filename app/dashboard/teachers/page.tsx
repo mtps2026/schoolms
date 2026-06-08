@@ -81,7 +81,7 @@ export default function TeachersPage() {
                         <DialogTrigger asChild>
                             <Button className="shrink-0 gradient-btn"><Plus className="mr-2 h-4 w-4" /> Add Teacher</Button>
                         </DialogTrigger>
-                        <DialogContent className="max-h-[90vh] overflow-y-auto">
+                        <DialogContent className="max-h-[90vh] w-[min(95vw,56rem)] max-w-5xl overflow-y-auto">
                             <DialogHeader>
                                 <DialogTitle className="gradient-text-primary">Onboard New Teacher</DialogTitle>
                             </DialogHeader>
