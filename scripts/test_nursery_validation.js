@@ -41,11 +41,12 @@ function isNurseryClassName(className) {
 
 function testDobForClass(className, dob) {
   const isNursery = isNurseryClassName(className);
-  const minAge = isNursery ? 1 : 4;
-  const maxAge = isNursery ? 4 : 120;
+  // For Nursery enforce minimum age 7 (i.e., DOB at least 7 years before today)
+  const minAge = isNursery ? 7 : 4;
+  const maxAge = 120;
   const err = getAgeValidationError(dob, minAge, maxAge);
-  const min = getMinDate(isNursery ? 3 : 120);
-  const max = getMaxDate(isNursery ? 1 : 4);
+  const min = getMinDate(maxAge); // earliest DOB allowed
+  const max = getMaxDate(minAge); // latest DOB allowed (youngest acceptable)
   return { className, dob, isNursery, minAge, maxAge, err, min, max };
 }
 

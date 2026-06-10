@@ -73,12 +73,12 @@ export async function generateReportCardPdf(reportCard: ReportCard): Promise<voi
 
     doc.text('Student Name:', col1x, iy);
     doc.setFont('helvetica', 'normal');
-    doc.text(student?.full_name || 'N/A', col1x + 30, iy);
+    doc.text(student?.full_name?.toUpperCase() || 'N/A', col1x + 30, iy);
 
     doc.setFont('helvetica', 'bold');
     doc.text('Class:', col2x, iy);
     doc.setFont('helvetica', 'normal');
-    doc.text(reportCard.classes?.class_name || 'N/A', col2x + 18, iy);
+    doc.text(reportCard.classes?.class_name?.toUpperCase() || 'N/A', col2x + 18, iy);
 
     iy += lineH;
     doc.setFont('helvetica', 'bold');
@@ -89,7 +89,7 @@ export async function generateReportCardPdf(reportCard: ReportCard): Promise<voi
     doc.setFont('helvetica', 'bold');
     doc.text('Term:', col2x, iy);
     doc.setFont('helvetica', 'normal');
-    doc.text(reportCard.term, col2x + 18, iy);
+    doc.text(reportCard.term?.toUpperCase() || 'N/A', col2x + 18, iy);
 
     iy += lineH;
     doc.setFont('helvetica', 'bold');
@@ -110,7 +110,7 @@ export async function generateReportCardPdf(reportCard: ReportCard): Promise<voi
         const grade = s.grade || autoGrade(obtained, s.max_marks);
         const pct = s.max_marks > 0 ? ((obtained / s.max_marks) * 100).toFixed(1) + '%' : 'N/A';
         return [
-            s.subject_name,
+            s.subject_name?.toUpperCase() || '',
             s.max_marks.toString(),
             obtained.toString(),
             pct,

@@ -89,12 +89,12 @@ export default function AddProfileForm({ roleName, onSuccess, defaultSchoolId }:
     const handleDobChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         const dob = e.target.value;
         setFormData({ ...formData, dob });
-        // Determine age limits based on selected class (Nursery: ~1-3 yrs)
+        // Determine age limits based on selected class (Nursery: require at least 7 years)
         const selectedClass = classes.find((c: any) => c.id === formData.class_id);
         const className = selectedClass?.class_name || "";
         const isNursery = /nur/i.test(className);
-        const minAge = isNursery ? 1 : 4;
-        const maxAge = isNursery ? 4 : 120;
+        const minAge = isNursery ? 7 : 4;
+        const maxAge = 120;
         const ageError = getAgeValidationError(dob, minAge, maxAge);
         setDobError(ageError);
     };
@@ -347,16 +347,15 @@ export default function AddProfileForm({ roleName, onSuccess, defaultSchoolId }:
                         onChange={handleDobChange}
                         required
                         min={(() => {
-                            const selectedClass = classes.find((c: any) => c.id === formData.class_id);
-                            const className = selectedClass?.class_name || "";
-                            const isNursery = /nur/i.test(className);
-                            return getMinDate(isNursery ? 4 : 120);
+                            // oldest allowable DOB (earliest date) - keep broad default
+                            return getMinDate(120);
                         })()}
                         max={(() => {
                             const selectedClass = classes.find((c: any) => c.id === formData.class_id);
                             const className = selectedClass?.class_name || "";
                             const isNursery = /nur/i.test(className);
-                            return getMaxDate(isNursery ? 1 : 4);
+                            // youngest allowable DOB (latest date): nursery requires at least 7 years, others min 4 years
+                            return getMaxDate(isNursery ? 7 : 4);
                         })()}
                     />
                     {dobError && (

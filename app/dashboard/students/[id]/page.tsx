@@ -5,7 +5,7 @@ import { useParams, useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabase";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Loader2, ArrowLeft, Trash2, Mail, Phone, MapPin, School, FileText, User } from "lucide-react";
+import { Loader2, ArrowLeft, Trash2, Mail, Phone, MapPin, School, FileText, User, CalendarDays } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import {
     AlertDialog,
@@ -110,11 +110,17 @@ export default function StudentDetailPagePage() {
                                     {student.schools?.school_name && (
                                         <span className="flex items-center gap-1"><School className="h-4 w-4" /> {student.schools.school_name}</span>
                                     )}
+                                    {student.admission_no && (
+                                        <span className="flex items-center gap-1"><FileText className="h-4 w-4" /> {student.admission_no}</span>
+                                    )}
                                     {student.email && (
                                         <span className="flex items-center gap-1"><Mail className="h-4 w-4" /> {student.email}</span>
                                     )}
                                     {student.phone && (
                                         <span className="flex items-center gap-1"><Phone className="h-4 w-4" /> {student.phone}</span>
+                                    )}
+                                    {student.dob && (
+                                        <span className="flex items-center gap-1"><CalendarDays className="h-4 w-4" /> {new Date(student.dob).toLocaleDateString("en-IN", { day: "2-digit", month: "short", year: "numeric" })}</span>
                                     )}
                                     {student.current_address && (
                                         <span className="flex items-center gap-1"><MapPin className="h-4 w-4" /> {student.current_address}</span>
