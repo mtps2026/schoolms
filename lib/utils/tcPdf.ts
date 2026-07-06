@@ -105,7 +105,8 @@ export async function generateTcPdf(tc: any): Promise<void> {
     // =====================================================================
     // ROW 2: Aadhar No (left) | Title line 1 (center) | Register No (right)
     // =====================================================================
-    y += 5;
+    // CHANGED: was y += 5, now y += 6 for more breathing room between ID rows
+    y += 6;
 
     // Aadhar — left
     doc.setFont("times", "bold");
@@ -128,14 +129,15 @@ export async function generateTcPdf(tc: any): Promise<void> {
     doc.text("Scholar's Register &", pageW / 2, y + 3, { align: "center" });
 
     // =====================================================================
-    // ROW 3: PAN No (left) | Title line 2 (center) | APAR ID (right)
+    // ROW 3: PEN No (left) | Title line 2 (center) | APAR ID (right)
     // =====================================================================
-    y += 5;
+    // CHANGED: was y += 5, now y += 6 for more breathing room between ID rows
+    y += 6;
 
-    // PAN No — left
+    // PEN No — left
     doc.setFont("times", "bold");
     doc.setFontSize(7);
-    doc.text("PAN No.", margin, y);
+    doc.text("PEN No.", margin, y);
     doc.line(margin + 18, y + 0.5, margin + 62, y + 0.5);
     doc.setFont("times", "normal");
     doc.text(tc.pan_number || "", margin + 20, y);
@@ -159,7 +161,8 @@ export async function generateTcPdf(tc: any): Promise<void> {
     // =====================================================================
     const logoH = 16;
     const logoW = 16;
-    const schoolFontSize = 15;
+    // CHANGED: was 15, now 14 — slightly smaller school name to save vertical space
+    const schoolFontSize = 14;
     const addressFontSize = 7;
 
     // Draw logo — pinned to left margin
@@ -198,12 +201,15 @@ export async function generateTcPdf(tc: any): Promise<void> {
             { content: "Last Institution attended before joining this one if any", styles: { fontStyle: "bold", fontSize: 7 } },
         ],
         [
-            { content: studentName, styles: { fontSize: 7 } },
+            // CHANGED: fontSize 7 → 8 for student name row — more legible on print
+            { content: studentName, styles: { fontSize: 8, fontStyle: "bold" } },
             {
                 content: `${tc.father_guardian_name || "—"}\n${tc.father_guardian_address || "—"}`,
-                styles: { fontSize: 7 },
+                // CHANGED: fontSize 7 → 8 for father/address row
+                styles: { fontSize: 8 },
             },
-            { content: tc.last_institution_before || "—", styles: { fontSize: 7 } },
+            // CHANGED: fontSize 7 → 8 for last institution row
+            { content: tc.last_institution_before || "—", styles: { fontSize: 8 } },
         ],
         [
             { content: "Caste or Religion", styles: { fontStyle: "bold", fontSize: 7 } },
@@ -211,9 +217,12 @@ export async function generateTcPdf(tc: any): Promise<void> {
             { content: "Length of Residence in this Province", styles: { fontStyle: "bold", fontSize: 7 } },
         ],
         [
-            { content: tc.caste_or_religion || "—", styles: { fontSize: 7 } },
-            { content: tc.mother_name || "—", styles: { fontSize: 7 } },
-            { content: tc.length_of_residence || "—", styles: { fontSize: 7 } },
+            // CHANGED: fontSize 7 → 8 for caste/religion value row
+            { content: tc.caste_or_religion || "—", styles: { fontSize: 8 } },
+            // CHANGED: fontSize 7 → 8 for mother name value row
+            { content: tc.mother_name || "—", styles: { fontSize: 8 } },
+            // CHANGED: fontSize 7 → 8 for length of residence value row
+            { content: tc.length_of_residence || "—", styles: { fontSize: 8 } },
         ],
     ];
 
@@ -227,14 +236,16 @@ export async function generateTcPdf(tc: any): Promise<void> {
         styles: {
             font: "times",
             fontSize: 7,
-            cellPadding: { top: 1, right: 1.5, bottom: 1, left: 1.5 },
+            // CHANGED: top/bottom cellPadding 1 → 2 for taller, more readable rows
+            cellPadding: { top: 2, right: 1.5, bottom: 2, left: 1.5 },
             lineWidth: 0.3,
             lineColor: [0, 0, 0],
             valign: "top",
             textColor: [0, 0, 0],
             overflow: "linebreak",
             fillColor: [255, 255, 255],
-            minCellHeight: 5,
+            // CHANGED: minCellHeight 5 → 7 for taller detail rows
+            minCellHeight: 7,
         },
         columnStyles: {
             0: { cellWidth: 45 },
@@ -250,20 +261,23 @@ export async function generateTcPdf(tc: any): Promise<void> {
     // =====================================================================
     doc.setLineWidth(0.3);
     doc.setDrawColor(0, 0, 0);
-    const dobBoxH = 11;
+    // CHANGED: dobBoxH 11 → 14 for more vertical space in DOB field
+    const dobBoxH = 14;
     doc.rect(margin, y, contentW, dobBoxH);
 
     doc.setFont("times", "bold");
-    doc.setFontSize(7);
+    // CHANGED: fontSize 7 → 8 for DOB label — more legible when printed
+    doc.setFontSize(8);
     doc.text(
         `Date of Birth of the Scholar (in figure & words): ${tc.dob ? formatIndianDate(tc.dob) : "—"}`,
         margin + 2,
-        y + 4
+        y + 5
     );
     if (tc.dob_in_words) {
         doc.setFont("times", "normal");
-        doc.setFontSize(7);
-        doc.text(`(${tc.dob_in_words})`, margin + 2, y + 8.5);
+        // CHANGED: fontSize 7 → 8 for DOB in words
+        doc.setFontSize(8);
+        doc.text(`(${tc.dob_in_words})`, margin + 2, y + 10.5);
     }
 
     y += dobBoxH + 1;
@@ -271,12 +285,15 @@ export async function generateTcPdf(tc: any): Promise<void> {
     // =====================================================================
     // CALCULATE ROW HEIGHT to fill remaining page space
     // =====================================================================
-    const footerY = pageH - 18;
+    // CHANGED: footerY pageH - 18 → pageH - 22 for more footer/cert text space
+    const footerY = pageH - 22;
     const certLineH = 6;
-    const tableHeadH = 13;
+    // CHANGED: tableHeadH 13 → 11 — slightly tighter header to give rows more room
+    const tableHeadH = 11;
     const availableForTableBody = footerY - certLineH - 4 - tableHeadH - y;
     const rowCount = TC_CLASS_LABELS.length;
-    const rowH = Math.max(6, availableForTableBody / rowCount);
+    // CHANGED: Math.max(6, ...) → Math.max(5, ...) — allow rows to compress more
+    const rowH = Math.max(5, availableForTableBody / rowCount);
 
     // =====================================================================
     // SCHOLAR'S REGISTER TABLE
@@ -326,8 +343,10 @@ export async function generateTcPdf(tc: any): Promise<void> {
         pageBreak: "avoid",
         styles: {
             font: "times",
-            fontSize: 6.5,
-            cellPadding: { top: 1, right: 1, bottom: 1, left: 1 },
+            // CHANGED: fontSize 6.5 → 6 — slightly smaller to help compress table
+            fontSize: 6,
+            // CHANGED: top/bottom cellPadding 1 → 0.5 — tighter rows in register table
+            cellPadding: { top: 0.5, right: 1, bottom: 0.5, left: 1 },
             minCellHeight: rowH,
             lineWidth: 0.3,
             lineColor: [0, 0, 0],
@@ -340,13 +359,15 @@ export async function generateTcPdf(tc: any): Promise<void> {
         headStyles: {
             font: "times",
             fontStyle: "bold",
-            fontSize: 6,
+            // CHANGED: fontSize 6 → 5.5 — tighter header text to allow smaller header height
+            fontSize: 5.5,
             fillColor: [255, 255, 255],
             textColor: [0, 0, 0],
             lineWidth: 0.3,
             lineColor: [0, 0, 0],
             halign: "center",
             valign: "middle",
+            // CHANGED: minCellHeight 13 → 11 — shorter header row
             minCellHeight: tableHeadH,
         },
         columnStyles: {
@@ -372,15 +393,17 @@ export async function generateTcPdf(tc: any): Promise<void> {
         "Certified that the above Scholar's Register has been, posted up-to-date of the Scholar's leaving as required by the Departmental Rules.";
 
     doc.setFont("times", "normal");
-    doc.setFontSize(6.5);
+    // CHANGED: fontSize 6.5 → 7 — slightly larger cert text, easier to read
+    doc.setFontSize(7);
     const remarkLines = doc.splitTextToSize(remarks, contentW - 2);
-    doc.text(remarkLines, pageW / 2, tableEndY + 3, { align: "center" });
+    doc.text(remarkLines, pageW / 2, tableEndY + 4, { align: "center" });
 
     // =====================================================================
     // FOOTER — fixed at page bottom, no P.T.O.
     // =====================================================================
     doc.setFont("times", "normal");
-    doc.setFontSize(8);
+    // CHANGED: fontSize 8 → 9 — larger, bolder-looking date and signature label
+    doc.setFontSize(9);
     doc.text(`Dated: ${tc.dated ? formatIndianDate(tc.dated) : ""}`, margin, footerY);
     doc.text("Head of Institution", pageW - margin, footerY, { align: "right" });
 

@@ -23,11 +23,11 @@ function validateAadhar(val: string): string | null {
     return null;
 }
 
-function validatePan(val: string): string | null {
+function validatePen(val: string): string | null {
     if (!val) return null; // optional field
-    const cleaned = val.trim().toUpperCase();
-    if (!/^[A-Z]{5}[0-9]{4}[A-Z]$/.test(cleaned)) {
-        return "PAN number must be 10 characters in format ABCDE1234F.";
+    const cleaned = val.replace(/\s/g, "");
+    if (!/^\d{11}$/.test(cleaned)) {
+        return "PEN number must be exactly 11 digits.";
     }
     return null;
 }
@@ -95,7 +95,7 @@ export default function TCForm({ student, tc, onSuccess }: TCFormProps) {
     const { profile } = useAuth();
     const [loading, setLoading] = useState(false);
     const [aadharError, setAadharError] = useState<string | null>(null);
-    const [panError, setPanError] = useState<string | null>(null);
+    const [penError, setPenError] = useState<string | null>(null);
 
     const [formData, setFormData] = useState({
         admission_file_no: tc?.admission_file_no || "",
@@ -113,7 +113,7 @@ export default function TCForm({ student, tc, onSuccess }: TCFormProps) {
         last_institution_before: tc?.last_institution_before || student?.last_institution || "",
         length_of_residence: tc?.length_of_residence || "",
         dob: tc?.dob || student?.dob || "",
-        dob_in_words: tc?.dob_in_words || "",
+        dob_in_words: tc?.dob_in_words || dateToWords(tc?.dob || student?.dob || ""),
         certification_remarks: tc?.certification_remarks || "Certified that the above Scholar's Register has been, posted up-to-date of the Scholar's leaving as required by the Departmental Rules.",
         dated: tc?.dated || new Date().toISOString().split("T")[0],
     });
@@ -146,10 +146,10 @@ export default function TCForm({ student, tc, onSuccess }: TCFormProps) {
         setAadharError(validateAadhar(val));
     };
 
-    const handlePanChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const handlePenChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         const val = e.target.value;
         setFormData((prev) => ({ ...prev, pan_number: val }));
-        setPanError(validatePan(val));
+        setPenError(validatePen(val));
     };
 
     const handleDobChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -168,8 +168,8 @@ export default function TCForm({ student, tc, onSuccess }: TCFormProps) {
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
 
-        if (aadharError || panError) {
-            toast.error(aadharError || panError || "Please correct the highlighted fields.");
+        if (aadharError || penError) {
+            toast.error(aadharError || penError || "Please correct the highlighted fields.");
             return;
         }
 
@@ -282,9 +282,9 @@ export default function TCForm({ student, tc, onSuccess }: TCFormProps) {
                         <Input id="tc_apar_number" value={formData.apar_number} onChange={setField("apar_number")} placeholder="e.g. APAR-001" />
                     </div>
                     <div className="space-y-1.5">
-                        <Label htmlFor="tc_pan_number">PAN Number</Label>
-                        <Input id="tc_pan_number" value={formData.pan_number} onChange={handlePanChange} placeholder="e.g. ABCDE1234F" maxLength={10} />
-                        {panError && <div className="text-red-500 text-xs font-medium">{panError}</div>}
+                        <Label htmlFor="tc_pen_number">PEN Number</Label>
+                        <Input id="tc_pen_number" value={formData.pan_number} onChange={handlePenChange} placeholder="11-digit PEN number" maxLength={11} />
+                        {penError && <div className="text-red-500 text-xs font-medium">{penError}</div>}
                     </div>
                 </div>
             </section>
@@ -342,7 +342,7 @@ export default function TCForm({ student, tc, onSuccess }: TCFormProps) {
             <section className="space-y-3">
                 <h3 className="text-sm font-semibold text-slate-500 uppercase tracking-wider border-b border-slate-100 pb-2">
                     Academic Record
-                </h3>
+                </h3>     
                 <div className="overflow-x-auto rounded-lg border border-slate-200">
                     <table className="w-full text-xs">
                         <thead>

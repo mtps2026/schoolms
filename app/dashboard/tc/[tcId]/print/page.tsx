@@ -160,7 +160,7 @@ export default function TCPrintPage() {
                         <div></div>
                     </div>
                     <div style={{ textAlign: "right" }}>
-                        <div>PAN No. <span className="dot-line">{tc.pan_number || ""}</span></div>
+                        <div>PEN No. <span className="dot-line">{tc.pan_number || ""}</span></div>
                     </div>
                 </div>
 
