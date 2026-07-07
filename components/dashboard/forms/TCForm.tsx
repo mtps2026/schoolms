@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { supabase } from "@/lib/supabase";
 import { uppercaseTextFields } from "@/lib/utils";
+import { convertDdMmYyyyToDate, convertDateToDdMmYyyy } from "@/lib/utils/validation";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -98,7 +99,7 @@ export default function TCForm({ student, tc, onSuccess }: TCFormProps) {
     const [penError, setPenError] = useState<string | null>(null);
 
     const [formData, setFormData] = useState({
-        admission_file_no: tc?.admission_file_no || "",
+        admission_file_no: tc?.admission_file_no || student?.admission_no || "",
         withdrawal_file_no: tc?.withdrawal_file_no || "",
         tc_file_no: tc?.tc_file_no || "",
         scholar_register_no: tc?.scholar_register_no || "",
@@ -112,7 +113,8 @@ export default function TCForm({ student, tc, onSuccess }: TCFormProps) {
         caste_or_religion: tc?.caste_or_religion || "",
         last_institution_before: tc?.last_institution_before || student?.last_institution || "",
         length_of_residence: tc?.length_of_residence || "",
-        dob: tc?.dob || student?.dob || "",
+        dob: convertDateToDdMmYyyy(tc?.dob || student?.dob || ""),
+        dob_iso: tc?.dob || student?.dob || "",
         dob_in_words: tc?.dob_in_words || dateToWords(tc?.dob || student?.dob || ""),
         certification_remarks: tc?.certification_remarks || "Certified that the above Scholar's Register has been, posted up-to-date of the Scholar's leaving as required by the Departmental Rules.",
         dated: tc?.dated || new Date().toISOString().split("T")[0],
@@ -153,8 +155,37 @@ export default function TCForm({ student, tc, onSuccess }: TCFormProps) {
     };
 
     const handleDobChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-        const val = e.target.value;
-        setFormData((prev) => ({ ...prev, dob: val, dob_in_words: dateToWords(val) }));
+        const dobInput = e.target.value;
+        
+        // Allow empty input
+        if (!dobInput) {
+            setFormData((prev) => ({ ...prev, dob: "", dob_iso: "", dob_in_words: "" }));
+            return;
+        }
+        
+        // Auto-format input: add slashes after dd and mm
+        let formatted = dobInput.replace(/\D/g, ""); // Remove non-digits
+        if (formatted.length > 8) formatted = formatted.slice(0, 8);
+        
+        if (formatted.length >= 2) {
+            formatted = formatted.slice(0, 2) + "/" + formatted.slice(2);
+        }
+        if (formatted.length >= 5) {
+            formatted = formatted.slice(0, 5) + "/" + formatted.slice(5);
+        }
+        
+        // Update the display value
+        setFormData((prev) => ({ ...prev, dob: formatted }));
+        
+        // Only update dob_iso and words if the input appears complete (length === 10 for dd/mm/yyyy)
+        if (formatted.length === 10) {
+            const isoDate = convertDdMmYyyyToDate(formatted);
+            setFormData((prev) => ({ 
+                ...prev, 
+                dob_iso: isoDate,
+                dob_in_words: dateToWords(isoDate) 
+            }));
+        }
     };
 
     const setRecord = (idx: number, field: keyof AcademicRecord) => (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -178,9 +209,10 @@ export default function TCForm({ student, tc, onSuccess }: TCFormProps) {
         try {
             let tcId: string;
 
+            const { dob_iso, ...dataWithoutDobIso } = formData;
             const cleanData = {
-                ...formData,
-                dob: formData.dob || null,
+                ...dataWithoutDobIso,
+                dob: dob_iso || null,
                 dated: formData.dated || null,
             };
 
@@ -329,7 +361,15 @@ export default function TCForm({ student, tc, onSuccess }: TCFormProps) {
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div className="space-y-1.5">
                         <Label htmlFor="dob">Date of Birth</Label>
-                        <Input id="dob" type="date" value={formData.dob} onChange={handleDobChange} />
+                        <Input 
+                            id="dob" 
+                            type="text" 
+                            value={formData.dob} 
+                            onChange={handleDobChange}
+                            placeholder="dd/mm/yyyy"
+                            className="font-mono"
+                        />
+                        <p className="text-xs text-slate-500">Enter date as dd/mm/yyyy (e.g. 15/03/2010)</p>
                     </div>
                     <div className="space-y-1.5">
                         <Label htmlFor="dob_in_words">Date of Birth (in words)</Label>

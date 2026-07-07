@@ -9,7 +9,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Loader2, Eye, EyeOff } from "lucide-react";
 import { createUserWithRole } from "@/app/actions/user-actions";
-import { getAgeValidationError, getMaxDate, getMinDate } from "@/lib/utils/validation";
+import { getAgeValidationError, getMaxDate, getMinDate, convertDdMmYyyyToDate, validateDdMmYyyyFormat } from "@/lib/utils/validation";
 import { toast } from "sonner";
 import FormWatermark from "@/components/common/FormWatermark";
 
@@ -87,16 +87,50 @@ export default function AddProfileForm({ roleName, onSuccess, defaultSchoolId }:
     }, [defaultSchoolId, formData.school_id, roleName]);
 
     const handleDobChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-        const dob = e.target.value;
-        setFormData({ ...formData, dob });
-        // Determine age limits based on selected class (Nursery: require at least 7 years)
-        const selectedClass = classes.find((c: any) => c.id === formData.class_id);
-        const className = selectedClass?.class_name || "";
-        const isNursery = /nur/i.test(className);
-        const minAge = isNursery ? 7 : 4;
-        const maxAge = 120;
-        const ageError = getAgeValidationError(dob, minAge, maxAge);
-        setDobError(ageError);
+        const dobInput = e.target.value;
+        
+        // Allow empty input
+        if (!dobInput) {
+            setFormData({ ...formData, dob: "" });
+            setDobError(null);
+            return;
+        }
+        
+        // Auto-format input: add slashes after dd and mm
+        let formatted = dobInput.replace(/\D/g, ""); // Remove non-digits
+        if (formatted.length > 8) formatted = formatted.slice(0, 8);
+        
+        if (formatted.length >= 2) {
+            formatted = formatted.slice(0, 2) + "/" + formatted.slice(2);
+        }
+        if (formatted.length >= 5) {
+            formatted = formatted.slice(0, 5) + "/" + formatted.slice(5);
+        }
+        
+        // Update the display value
+        setFormData({ ...formData, dob: formatted });
+        
+        // Only validate if the input appears complete (length === 10 for dd/mm/yyyy)
+        if (formatted.length === 10) {
+            if (!validateDdMmYyyyFormat(formatted)) {
+                setDobError("Please enter a valid date (dd/mm/yyyy)");
+                return;
+            }
+            
+            // Convert to ISO format for validation
+            const isoDate = convertDdMmYyyyToDate(formatted);
+            
+            // Determine age limits based on selected class
+            const selectedClass = classes.find((c: any) => c.id === formData.class_id);
+            const className = selectedClass?.class_name || "";
+            const isNursery = /nur/i.test(className);
+            const minAge = isNursery ? 7 : 4;
+            const maxAge = 120;
+            const ageError = getAgeValidationError(isoDate, minAge, maxAge);
+            setDobError(ageError);
+        } else {
+            setDobError(null);
+        }
     };
 
     const handleAadharChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -146,8 +180,12 @@ export default function AddProfileForm({ roleName, onSuccess, defaultSchoolId }:
         setError(null);
 
         try {
+            // Convert dob from dd/mm/yyyy to yyyy-mm-dd for storage
+            const isoDate = convertDdMmYyyyToDate(formData.dob);
+            
             const result = await createUserWithRole({
                 ...formData,
+                dob: isoDate,
                 school_id: schoolIdToUse,
                 role_name: roleName,
                 address: formData.current_address,
@@ -342,22 +380,14 @@ export default function AddProfileForm({ roleName, onSuccess, defaultSchoolId }:
                     <Label htmlFor="dob">Date of Birth</Label>
                     <Input
                         id="dob"
-                        type="date"
+                        type="text"
                         value={formData.dob}
                         onChange={handleDobChange}
                         required
-                        min={(() => {
-                            // oldest allowable DOB (earliest date) - keep broad default
-                            return getMinDate(120);
-                        })()}
-                        max={(() => {
-                            const selectedClass = classes.find((c: any) => c.id === formData.class_id);
-                            const className = selectedClass?.class_name || "";
-                            const isNursery = /nur/i.test(className);
-                            // youngest allowable DOB (latest date): nursery requires at least 7 years, others min 4 years
-                            return getMaxDate(isNursery ? 7 : 4);
-                        })()}
+                        placeholder="dd/mm/yyyy"
+                        className="font-mono"
                     />
+                    <p className="text-xs text-slate-500">Enter date as dd/mm/yyyy (e.g. 15/03/2010)</p>
                     {dobError && (
                         <div className="text-red-500 text-sm">{dobError}</div>
                     )}

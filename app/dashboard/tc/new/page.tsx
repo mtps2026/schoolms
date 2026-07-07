@@ -52,7 +52,7 @@ export default function NewTCPage() {
                 if (queryStudentId) {
                     const { data: studentData, error: studentError } = await supabase
                         .from("students_data")
-                        .select("id, full_name, class_id, school_id, current_address, father_name, mother_name, dob")
+                        .select("id, full_name, class_id, school_id, current_address, father_name, mother_name, dob, aadhar_number, admission_no")
                         .eq("id", queryStudentId)
                         .single();
                     if (studentError) throw studentError;
@@ -110,7 +110,7 @@ export default function NewTCPage() {
             try {
                 const { data, error } = await supabase
                     .from("students_data")
-                    .select("id, full_name, class_id, school_id, current_address, father_name, mother_name, dob")
+                    .select("id, full_name, class_id, school_id, current_address, father_name, mother_name, dob, aadhar_number, admission_no")
                     .eq("id", selectedStudentId)
                     .single();
                 if (error) throw error;

@@ -80,48 +80,50 @@ export async function generateTcPdf(tc: any): Promise<void> {
     // ROW 1: Admission No (left) | Withdrawal No (center) | TC File No (right)
     // =====================================================================
     doc.setFont("times", "bold");
-    doc.setFontSize(7);
+    // CHANGED: 7 → 8.5 — larger, clearer label text for top ID fields
+    doc.setFontSize(8.5);
 
     // Admission File No — left
     doc.text("Admission File No.", margin, y);
-    doc.line(margin + 28, y + 0.5, margin + 62, y + 0.5);
+    doc.line(margin + 32, y + 0.5, margin + 68, y + 0.5);
     doc.setFont("times", "normal");
-    doc.text(tc.admission_file_no || "", margin + 30, y);
+    doc.text(tc.admission_file_no || "", margin + 33, y);
 
     // Withdrawal File No — center
     doc.setFont("times", "bold");
-    doc.text("Withdrawal File No.", pageW / 2 - 24, y);
-    doc.line(pageW / 2 + 8, y + 0.5, pageW / 2 + 42, y + 0.5);
+    doc.text("Withdrawal File No.", pageW / 2 - 26, y);
+    doc.line(pageW / 2 + 8, y + 0.5, pageW / 2 + 44, y + 0.5);
     doc.setFont("times", "normal");
     doc.text(tc.withdrawal_file_no || "", pageW / 2 + 10, y);
 
     // TC File No — right
     doc.setFont("times", "bold");
-    doc.text("TC File No.", pageW - margin - 38, y);
-    doc.line(pageW - margin - 22, y + 0.5, pageW - margin, y + 0.5);
+    doc.text("TC File No.", pageW - margin - 40, y);
+    doc.line(pageW - margin - 23, y + 0.5, pageW - margin, y + 0.5);
     doc.setFont("times", "normal");
-    doc.text(tc.tc_file_no || "", pageW - margin - 21, y);
+    doc.text(tc.tc_file_no || "", pageW - margin - 22, y);
 
     // =====================================================================
     // ROW 2: Aadhar No (left) | Title line 1 (center) | Register No (right)
     // =====================================================================
-    // CHANGED: was y += 5, now y += 6 for more breathing room between ID rows
-    y += 6;
+    // CHANGED: 6 → 7 for a bit more breathing room between ID rows
+    y += 7;
 
     // Aadhar — left
     doc.setFont("times", "bold");
-    doc.setFontSize(7);
+    // CHANGED: 7 → 8.5 — larger label for Aadhar No
+    doc.setFontSize(8.5);
     doc.text("Aadhar No.", margin, y);
-    doc.line(margin + 18, y + 0.5, margin + 62, y + 0.5);
+    doc.line(margin + 22, y + 0.5, margin + 68, y + 0.5);
     doc.setFont("times", "normal");
-    doc.text(tc.aadhar_number || "", margin + 20, y);
+    doc.text(tc.aadhar_number || "", margin + 23, y);
 
     // Register No — right
     doc.setFont("times", "bold");
-    doc.text("Register No.", pageW - margin - 38, y);
-    doc.line(pageW - margin - 22, y + 0.5, pageW - margin, y + 0.5);
+    doc.text("Register No.", pageW - margin - 40, y);
+    doc.line(pageW - margin - 23, y + 0.5, pageW - margin, y + 0.5);
     doc.setFont("times", "normal");
-    doc.text(tc.scholar_register_no || "", pageW - margin - 21, y);
+    doc.text(tc.scholar_register_no || "", pageW - margin - 22, y);
 
     // Title line 1 — centered vertically with row 2, with more spacing from top
     doc.setFont("times", "bold");
@@ -131,23 +133,24 @@ export async function generateTcPdf(tc: any): Promise<void> {
     // =====================================================================
     // ROW 3: PEN No (left) | Title line 2 (center) | APAR ID (right)
     // =====================================================================
-    // CHANGED: was y += 5, now y += 6 for more breathing room between ID rows
-    y += 6;
+    // CHANGED: 6 → 7 for a bit more breathing room between ID rows
+    y += 7;
 
     // PEN No — left
     doc.setFont("times", "bold");
-    doc.setFontSize(7);
+    // CHANGED: 7 → 8.5 — larger label for PEN No
+    doc.setFontSize(8.5);
     doc.text("PEN No.", margin, y);
-    doc.line(margin + 18, y + 0.5, margin + 62, y + 0.5);
+    doc.line(margin + 16, y + 0.5, margin + 68, y + 0.5);
     doc.setFont("times", "normal");
-    doc.text(tc.pan_number || "", margin + 20, y);
+    doc.text(tc.pan_number || "", margin + 17, y);
 
     // APAR ID — right
     doc.setFont("times", "bold");
-    doc.text("APAAR ID", pageW - margin - 38, y);
-    doc.line(pageW - margin - 22, y + 0.5, pageW - margin, y + 0.5);
+    doc.text("APAAR ID", pageW - margin - 40, y);
+    doc.line(pageW - margin - 23, y + 0.5, pageW - margin, y + 0.5);
     doc.setFont("times", "normal");
-    doc.text(tc.apar_number || "", pageW - margin - 21, y);
+    doc.text(tc.apar_number || "", pageW - margin - 22, y);
 
     // Title line 2 — centered vertically with row 3, with more spacing from top
     doc.setFont("times", "bold");
@@ -285,15 +288,16 @@ export async function generateTcPdf(tc: any): Promise<void> {
     // =====================================================================
     // CALCULATE ROW HEIGHT to fill remaining page space
     // =====================================================================
-    // CHANGED: footerY pageH - 18 → pageH - 22 for more footer/cert text space
-    const footerY = pageH - 22;
+    // CHANGED: pageH - 22 → pageH - 30 — footer sits 30mm from bottom,
+    //          leaving ~12mm clear space above it for signatures
+    const footerY = pageH - 30;
     const certLineH = 6;
-    // CHANGED: tableHeadH 13 → 11 — slightly tighter header to give rows more room
-    const tableHeadH = 11;
-    const availableForTableBody = footerY - certLineH - 4 - tableHeadH - y;
+    // CHANGED: tableHeadH 11 → 10 — tighter header row
+    const tableHeadH = 10;
+    const availableForTableBody = footerY - certLineH - 6 - tableHeadH - y;
     const rowCount = TC_CLASS_LABELS.length;
-    // CHANGED: Math.max(6, ...) → Math.max(5, ...) — allow rows to compress more
-    const rowH = Math.max(5, availableForTableBody / rowCount);
+    // CHANGED: Math.max(5, ...) → Math.max(4, ...) — allow rows to compress further
+    const rowH = Math.max(4, availableForTableBody / rowCount);
 
     // =====================================================================
     // SCHOLAR'S REGISTER TABLE
@@ -343,10 +347,10 @@ export async function generateTcPdf(tc: any): Promise<void> {
         pageBreak: "avoid",
         styles: {
             font: "times",
-            // CHANGED: fontSize 6.5 → 6 — slightly smaller to help compress table
-            fontSize: 6,
-            // CHANGED: top/bottom cellPadding 1 → 0.5 — tighter rows in register table
-            cellPadding: { top: 0.5, right: 1, bottom: 0.5, left: 1 },
+            // CHANGED: 6 → 5.5 — smaller text to compress rows further
+            fontSize: 5.5,
+            // CHANGED: 0.5 → 0.3 top/bottom — maximum row compression
+            cellPadding: { top: 0.3, right: 1, bottom: 0.3, left: 1 },
             minCellHeight: rowH,
             lineWidth: 0.3,
             lineColor: [0, 0, 0],
@@ -359,15 +363,15 @@ export async function generateTcPdf(tc: any): Promise<void> {
         headStyles: {
             font: "times",
             fontStyle: "bold",
-            // CHANGED: fontSize 6 → 5.5 — tighter header text to allow smaller header height
-            fontSize: 5.5,
+            // CHANGED: 5.5 → 5 — tighter header text
+            fontSize: 5,
             fillColor: [255, 255, 255],
             textColor: [0, 0, 0],
             lineWidth: 0.3,
             lineColor: [0, 0, 0],
             halign: "center",
             valign: "middle",
-            // CHANGED: minCellHeight 13 → 11 — shorter header row
+            // CHANGED: 11 → 10 — shorter header row
             minCellHeight: tableHeadH,
         },
         columnStyles: {
@@ -399,13 +403,14 @@ export async function generateTcPdf(tc: any): Promise<void> {
     doc.text(remarkLines, pageW / 2, tableEndY + 4, { align: "center" });
 
     // =====================================================================
-    // FOOTER — fixed at page bottom, no P.T.O.
+    // FOOTER — near page bottom, no underlines, signature space left blank above
     // =====================================================================
-    doc.setFont("times", "normal");
-    // CHANGED: fontSize 8 → 9 — larger, bolder-looking date and signature label
+    doc.setFont("times", "bold");
     doc.setFontSize(9);
-    doc.text(`Dated: ${tc.dated ? formatIndianDate(tc.dated) : ""}`, margin, footerY);
-    doc.text("Head of Institution", pageW - margin, footerY, { align: "right" });
+    // CHANGED: moved to pageH - 14 — closer to page edge, more blank space above for signatures
+    const printFooterY = pageH - 14;
+    doc.text(`Dated: ${tc.dated ? formatIndianDate(tc.dated) : ""}`, margin, printFooterY);
+    doc.text("Head of Institution", pageW - margin, printFooterY, { align: "right" });
 
     const fileName = `TC_${studentName.replace(/\s+/g, "_")}_${fileYear}.pdf`;
     doc.save(fileName);

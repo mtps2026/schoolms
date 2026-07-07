@@ -46,3 +46,42 @@ export const getMinDate = (maxAge: number = 120): string => {
     date.setFullYear(date.getFullYear() - maxAge);
     return date.toISOString().split('T')[0];
 };
+
+/**
+ * Convert dd/mm/yyyy format to yyyy-mm-dd format
+ */
+export const convertDdMmYyyyToDate = (dateStr: string): string => {
+    if (!dateStr) return "";
+    const [dd, mm, yyyy] = dateStr.split('/');
+    if (!dd || !mm || !yyyy) return "";
+    return `${yyyy}-${mm.padStart(2, '0')}-${dd.padStart(2, '0')}`;
+};
+
+/**
+ * Convert yyyy-mm-dd format to dd/mm/yyyy format
+ */
+export const convertDateToDdMmYyyy = (dateStr: string): string => {
+    if (!dateStr) return "";
+    const [yyyy, mm, dd] = dateStr.split('-');
+    if (!yyyy || !mm || !dd) return "";
+    return `${dd}/${mm}/${yyyy}`;
+};
+
+/**
+ * Validate dd/mm/yyyy format
+ */
+export const validateDdMmYyyyFormat = (dateStr: string): boolean => {
+    if (!dateStr) return false;
+    const regex = /^(\d{2})\/(\d{2})\/(\d{4})$/;
+    const match = dateStr.match(regex);
+    if (!match) return false;
+    
+    const [, dd, mm, yyyy] = match;
+    const day = parseInt(dd, 10);
+    const month = parseInt(mm, 10);
+    
+    if (month < 1 || month > 12) return false;
+    if (day < 1 || day > 31) return false;
+    
+    return true;
+};
