@@ -311,6 +311,54 @@ export function useAdminTeachers({ page, search, schoolId, itemsPerPage = ITEMS_
     };
 }
 
+export function useTeacherStudents({ page, search, teacherId, itemsPerPage = ITEMS_PER_PAGE }: UsePaginationOptions & { teacherId: string | undefined }) {
+    const key = teacherId ? [`teacher-students`, page, search, teacherId].join('#') : null;
+
+    const fetcher = async () => {
+        if (!teacherId) return { data: [], count: 0 };
+
+        const { data: teacherData, error: teacherError } = await supabase
+            .from("teachers_data")
+            .select("class_ids")
+            .eq("id", teacherId)
+            .maybeSingle();
+
+        if (teacherError) throw teacherError;
+
+        const classIds: string[] = teacherData?.class_ids || [];
+        if (classIds.length === 0) return { data: [], count: 0 };
+
+        let query = supabase.from("students_data")
+            .select(`*, schools(school_name), classes(class_name)`, { count: "exact" })
+            .in("class_id", classIds)
+            .eq("is_deleted", false);
+
+        if (search) query = query.ilike("full_name", `%${search}%`);
+
+        const from = (page - 1) * itemsPerPage;
+        const to = from + itemsPerPage - 1;
+
+        const { data, count, error } = await query.range(from, to).order("created_at", { ascending: false });
+        if (error) throw error;
+        return { data, count };
+    };
+
+    const { data, error, isLoading, mutate } = useSWR(key, fetcher, {
+        keepPreviousData: true,
+        revalidateOnFocus: false,
+        revalidateOnReconnect: false,
+        dedupingInterval: 2000,
+    });
+
+    return {
+        students: data?.data || [],
+        totalCount: data?.count || 0,
+        loading: isLoading,
+        error,
+        mutate
+    };
+}
+
 export function useAdminStudents({ page, search, schoolId, itemsPerPage = ITEMS_PER_PAGE }: UsePaginationOptions & { schoolId: string }) {
     const key = [`admin-students`, page, search, schoolId].join('#');
 

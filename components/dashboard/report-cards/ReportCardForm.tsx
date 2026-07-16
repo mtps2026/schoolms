@@ -16,6 +16,7 @@ import { Loader2, Plus, Trash2, ArrowLeft, Save } from "lucide-react";
 import { autoGrade, ReportCard, ReportCardSubject } from "@/lib/hooks/useReportCards";
 import { toast } from "sonner";
 import FormWatermark from "@/components/common/FormWatermark";
+import { getTeacherAssignedClassIds } from "@/lib/utils/teacherAccess";
 
 // ── Constants ──────────────────────────────────────────────────────────────
 const TERMS = ["Term 1", "Term 2", "Final Exam"];
@@ -70,6 +71,7 @@ export default function ReportCardForm({
     const [schools, setSchools] = useState<any[]>([]);
     const [selectedSchool, setSelectedSchool] = useState<string>(schoolId || "");
     const [loadingOptions, setLoadingOptions] = useState(true);
+    const [teacherAssignedClassIds, setTeacherAssignedClassIds] = useState<string[]>([]);
 
     // ── Form state ─────────────────────────────────────────────────────────
     const [form, setForm] = useState<FormData>({
@@ -119,6 +121,38 @@ export default function ReportCardForm({
                     setLoadingOptions(false);
                     return;
                 }
+
+                if (role === "Teacher" && profile?.id) {
+                    const assignedClassIds = await getTeacherAssignedClassIds(profile.id);
+                    setTeacherAssignedClassIds(assignedClassIds);
+                    if (assignedClassIds.length === 0) {
+                        setStudents([]);
+                        setClasses([]);
+                        setLoadingOptions(false);
+                        return;
+                    }
+
+                    const [{ data: s }, { data: c }] = await Promise.all([
+                        supabase.from("students_data")
+                            .select("id, full_name, class_id, classes(class_name)")
+                            .eq("school_id", effectiveSchoolId)
+                            .in("class_id", assignedClassIds)
+                            .eq("is_deleted", false)
+                            .order("full_name"),
+                        supabase.from("classes")
+                            .select("id, class_name, academic_year")
+                            .eq("school_id", effectiveSchoolId)
+                            .in("id", assignedClassIds)
+                            .eq("is_deleted", false)
+                            .order("class_name"),
+                    ]);
+                    setStudents(s || []);
+                    setClasses(c || []);
+                    setLoadingOptions(false);
+                    return;
+                }
+
+                setTeacherAssignedClassIds([]);
 
                 // Now load students and classes for the selected school
                 const [{ data: s }, { data: c }] = await Promise.all([
@@ -302,6 +336,14 @@ export default function ReportCardForm({
 
     if (loadingOptions) {
         return <div className="flex justify-center py-12"><Loader2 className="h-8 w-8 animate-spin text-indigo-600" /></div>;
+    }
+
+    if (role === "Teacher" && teacherAssignedClassIds.length === 0) {
+        return (
+            <div className="rounded-lg border border-indigo-100 bg-white p-6 text-center text-slate-600">
+                You are not assigned to any classes yet, so there are no students or report cards available for you.
+            </div>
+        );
     }
 
     return (

@@ -19,12 +19,14 @@ import {
 } from "@/components/ui/alert-dialog";
 import EditProfileDialog from "@/components/dashboard/forms/EditProfileDialog";
 import { useAuth } from "@/context/AuthContext";
+import { getTeacherAssignedClassIds } from "@/lib/utils/teacherAccess";
 
 export default function StudentDetailPagePage() {
     const { id } = useParams();
     const router = useRouter();
-    const { role } = useAuth();
+    const { role, profile } = useAuth();
     const canEdit = role === "Superadmin" || role === "Admin" || role === "Teacher";
+    const isTeacher = role === "Teacher";
     const [student, setStudent] = useState<any>(null);
     const [enrolledClass, setEnrolledClass] = useState<any>(null);
     const [teachers, setTeachers] = useState<any[]>([]);
@@ -50,6 +52,17 @@ export default function StudentDetailPagePage() {
                 .single();
 
             if (error) throw error;
+
+            if (isTeacher && profile?.id) {
+                const assignedClassIds = await getTeacherAssignedClassIds(profile.id);
+                const hasAccess = assignedClassIds.includes(data.class_id);
+                if (!hasAccess) {
+                    setStudent(null);
+                    setLoading(false);
+                    return;
+                }
+            }
+
             setStudent(data);
 
             if (data?.classes) {
@@ -89,7 +102,7 @@ export default function StudentDetailPagePage() {
 
     if (!mounted) return null;
     if (loading) return <div className="flex justify-center py-20"><Loader2 className="h-8 w-8 animate-spin" /></div>;
-    if (!student) return <div>Student not found</div>;
+    if (!student) return <div className="text-center py-20 text-slate-500">Student not found or you do not have access to this student.</div>;
 
     return (
         <div className="space-y-6">

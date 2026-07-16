@@ -10,7 +10,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Loader2, Plus, Search, ChevronLeft, ChevronRight } from "lucide-react";
 import { Dialog, DialogContent, DialogTrigger, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import AddProfileForm from "@/components/dashboard/forms/AddProfileForm";
-import { useStudents, useAdminStudents } from "@/lib/hooks/useData";
+import { useStudents, useAdminStudents, useTeacherStudents } from "@/lib/hooks/useData";
 import { useAuth } from "@/context/AuthContext";
 
 const ITEMS_PER_PAGE = 50;
@@ -38,13 +38,18 @@ export default function StudentsPage() {
         search,
         schoolId: schoolId || ""
     });
+    const { students: teacherStudents, totalCount: teacherTotalCount, loading: teacherLoading, mutate: teacherMutate } = useTeacherStudents({
+        page,
+        search,
+        teacherId: isTeacher ? profile?.id : undefined
+    });
 
     // Admins and Teachers are school-scoped; Superadmin sees all
     const isSchoolScoped = isAdmin || isTeacher;
-    const displayStudents = isSchoolScoped ? adminStudents : students;
-    const displayTotal = isSchoolScoped ? adminTotalCount : totalCount;
-    const displayLoading = isSchoolScoped ? adminLoading : loading;
-    const displayMutate = isSchoolScoped ? adminMutate : mutate;
+    const displayStudents = isTeacher ? teacherStudents : isAdmin ? adminStudents : students;
+    const displayTotal = isTeacher ? teacherTotalCount : isAdmin ? adminTotalCount : totalCount;
+    const displayLoading = isTeacher ? teacherLoading : isAdmin ? adminLoading : loading;
+    const displayMutate = isTeacher ? teacherMutate : isAdmin ? adminMutate : mutate;
 
     useEffect(() => setMounted(true), []);
 
